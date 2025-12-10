@@ -12,6 +12,9 @@ import { SmartSearch } from "@/components/ui/SmartSearch"
 import { UserPreferences } from "@/components/ui/UserPreferences"
 import { MentionInput } from "@/components/ui/MentionInput"
 import { AssignmentDropdown } from "@/components/ui/AssignmentDropdown"
+import { ContentTemplates } from "@/components/ui/ContentTemplates"
+import { AuditTrail } from "@/components/ui/AuditTrail"
+import { logAction, ACTIONS } from "@/lib/auditService"
 import { ExternalLink, Filter, Search, Plus, X, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard } from "lucide-react"
 
 const PAGE_SIZE = 50
@@ -212,10 +215,12 @@ export function PressReleases() {
     }
 
     async function handleDelete(id) {
+        const itemToDelete = allData.find(p => p.id === id)
         toast.confirm("Apakah Anda yakin ingin menghapus siaran pers ini?", async () => {
             try {
                 const { error } = await supabase.from('press_releases').delete().eq('id', id)
                 if (error) throw error
+                logAction(ACTIONS.DELETE, 'press_release', id, { title: itemToDelete?.["JUDUL SIARAN PERS"] })
                 await fetchAllData(); toast.success("Siaran pers berhasil dihapus!")
             } catch (error) { toast.error("Gagal menghapus: " + error.message) }
         })
@@ -226,10 +231,14 @@ export function PressReleases() {
         try {
             if (editingId) {
                 const { error } = await supabase.from('press_releases').update(formData).eq('id', editingId)
-                if (error) throw error; toast.success("Siaran pers berhasil diperbarui!")
+                if (error) throw error
+                logAction(ACTIONS.UPDATE, 'press_release', editingId, { title: formData["JUDUL SIARAN PERS"] })
+                toast.success("Siaran pers berhasil diperbarui!")
             } else {
                 const { error } = await supabase.from('press_releases').insert([formData])
-                if (error) throw error; toast.success("Siaran pers berhasil ditambahkan!")
+                if (error) throw error
+                logAction(ACTIONS.CREATE, 'press_release', null, { title: formData["JUDUL SIARAN PERS"] })
+                toast.success("Siaran pers berhasil ditambahkan!")
             }
             await fetchAllData(); resetForm(); setShowForm(false)
         } catch (error) { toast.error("Gagal menyimpan: " + error.message) }

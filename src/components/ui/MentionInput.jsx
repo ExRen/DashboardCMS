@@ -1,16 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { AtSign, X } from "lucide-react"
-
-// Mock user list - in production, fetch from Supabase/API
-const USERS = [
-    { id: 1, name: "Admin", role: "Administrator" },
-    { id: 2, name: "Corcomm Team", role: "Content Creator" },
-    { id: 3, name: "Humas ASABRI", role: "PR Manager" },
-    { id: 4, name: "Design Team", role: "Designer" },
-    { id: 5, name: "Social Media", role: "Social Media Manager" },
-    { id: 6, name: "Marketing", role: "Marketing" },
-    { id: 7, name: "Legal", role: "Legal Compliance" },
-]
+import { USERS, searchUsers } from "@/lib/usersData"
 
 /**
  * MentionInput - Text input/textarea with @mention autocomplete

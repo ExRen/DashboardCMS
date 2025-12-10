@@ -1,16 +1,6 @@
 import { useState, useEffect } from "react"
 import { User, UserPlus, Check, X } from "lucide-react"
-
-// User list - sama dengan MentionInput
-const USERS = [
-    { id: 1, name: "Admin", role: "Administrator" },
-    { id: 2, name: "Corcomm Team", role: "Content Creator" },
-    { id: 3, name: "Humas ASABRI", role: "PR Manager" },
-    { id: 4, name: "Design Team", role: "Designer" },
-    { id: 5, name: "Social Media", role: "Social Media Manager" },
-    { id: 6, name: "Marketing", role: "Marketing" },
-    { id: 7, name: "Legal", role: "Legal Compliance" },
-]
+import { USERS } from "@/lib/usersData"
 
 /**
  * AssignmentDropdown - Assign content to a user

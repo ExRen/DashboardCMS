@@ -15,6 +15,8 @@ import { UserPreferences } from "@/components/ui/UserPreferences"
 import { MentionInput } from "@/components/ui/MentionInput"
 import { AssignmentDropdown } from "@/components/ui/AssignmentDropdown"
 import { CommentsPanel, CommentButton, getCommentCount } from "@/components/ui/CommentsPanel"
+import { AuditTrail } from "@/components/ui/AuditTrail"
+import { logAction, ACTIONS } from "@/lib/auditService"
 import { Search, Plus, X, Pencil, Trash2, Filter, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, RefreshCw, Download, MessageSquare } from "lucide-react"
 
 const PAGE_SIZE = 50
@@ -194,6 +196,7 @@ export function Commando() {
             try {
                 const { error } = await supabase.from('commando_contents').delete().in('id', selectedIds)
                 if (error) throw error
+                logAction(ACTIONS.BULK_DELETE, 'commando', null, { count: selectedIds.length })
                 toast.success(`${selectedIds.length} item berhasil dihapus!`)
                 setSelectedIds([])
                 await refreshData()
@@ -250,10 +253,12 @@ export function Commando() {
     }
 
     async function handleDelete(id) {
+        const itemToDelete = allData.find(c => c.id === id)
         toast.confirm("Apakah Anda yakin ingin menghapus konten ini?", async () => {
             try {
                 const { error } = await supabase.from('commando_contents').delete().eq('id', id)
                 if (error) throw error
+                logAction(ACTIONS.DELETE, 'commando', id, { title: itemToDelete?.["JUDUL KONTEN"] })
                 await refreshData(); toast.success("Konten berhasil dihapus!")
             } catch (error) { toast.error("Gagal menghapus: " + error.message) }
         })
@@ -264,10 +269,14 @@ export function Commando() {
         try {
             if (editingId) {
                 const { error } = await supabase.from('commando_contents').update(formData).eq('id', editingId)
-                if (error) throw error; toast.success("Konten berhasil diperbarui!")
+                if (error) throw error
+                logAction(ACTIONS.UPDATE, 'commando', editingId, { title: formData["JUDUL KONTEN"] })
+                toast.success("Konten berhasil diperbarui!")
             } else {
                 const { error } = await supabase.from('commando_contents').insert([formData])
-                if (error) throw error; toast.success("Konten berhasil ditambahkan!")
+                if (error) throw error
+                logAction(ACTIONS.CREATE, 'commando', null, { title: formData["JUDUL KONTEN"] })
+                toast.success("Konten berhasil ditambahkan!")
             }
             await refreshData(); resetForm(); setShowForm(false)
         } catch (error) { toast.error("Gagal menyimpan: " + error.message) }
