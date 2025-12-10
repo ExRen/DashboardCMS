@@ -10,6 +10,8 @@ import { supabase } from "@/lib/supabase"
 import { parseDate } from "@/lib/dateUtils"
 import { SmartSearch } from "@/components/ui/SmartSearch"
 import { UserPreferences } from "@/components/ui/UserPreferences"
+import { MentionInput } from "@/components/ui/MentionInput"
+import { AssignmentDropdown } from "@/components/ui/AssignmentDropdown"
 import { ExternalLink, Filter, Search, Plus, X, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard } from "lucide-react"
 
 const PAGE_SIZE = 50
@@ -17,7 +19,8 @@ const INITIAL_FORM = {
     "JUDUL SIARAN PERS": "", "NOMOR SIARAN PERS": "", "TANGGAL TERBIT": "",
     "JENIS RILIS": "", "KETEGORI": "", "MEDIA PLAN": "", "LINGKUP": "",
     "LINK WEBSITE": "", "FOLDER SIARAN PERS": "", "WRITER CORCOMM": "",
-    "REVIEW": "", "PROCESS": "", "KETERANGAN": "", year: 2025
+    "REVIEW": "", "PROCESS": "", "KETERANGAN": "", year: 2025,
+    "ASSIGNED_TO": "", "NOTES": ""
 }
 
 export function PressReleases() {
@@ -344,6 +347,25 @@ export function PressReleases() {
                                     <div><label className="text-sm font-medium">Writer Corcomm</label><input type="text" value={formData["WRITER CORCOMM"]} onChange={(e) => setFormData({ ...formData, "WRITER CORCOMM": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
                                 </div>
                                 <div><label className="text-sm font-medium">Link Website</label><input type="text" value={formData["LINK WEBSITE"]} onChange={(e) => setFormData({ ...formData, "LINK WEBSITE": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
+
+                                {/* Assignment & Notes */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <AssignmentDropdown
+                                        value={formData["ASSIGNED_TO"]}
+                                        onChange={(val) => setFormData({ ...formData, "ASSIGNED_TO": val })}
+                                        itemId={editingId}
+                                        itemType="press"
+                                    />
+                                    <div>
+                                        <label className="text-sm font-medium">Catatan (@mention)</label>
+                                        <MentionInput
+                                            value={formData["NOTES"]}
+                                            onChange={(val) => setFormData({ ...formData, "NOTES": val })}
+                                            placeholder="Tulis catatan... @mention untuk tag"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="flex gap-3 pt-2"><Button type="button" variant="outline" onClick={() => { setShowForm(false); resetForm(); }} className="flex-1">Batal</Button><Button type="submit" disabled={submitting} className="flex-1">{submitting ? "Menyimpan..." : (editingId ? "Update" : "Simpan")}</Button></div>
                             </form>
                         </CardContent>
@@ -415,7 +437,7 @@ export function PressReleases() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="text-base">Daftar Siaran Pers ({totalCount})</CardTitle>
                     <div className="flex items-center gap-3">
-                        <UserPreferences 
+                        <UserPreferences
                             columns={TABLE_COLUMNS}
                             onColumnChange={(cols) => {
                                 setVisibleColumns(cols)

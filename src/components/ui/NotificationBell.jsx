@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { Bell, X, Clock, AlertCircle, CheckCircle, Info, Trash2 } from "lucide-react"
+import { Bell, X, Clock, AlertCircle, CheckCircle, Info, Trash2, AtSign, UserPlus } from "lucide-react"
 import { useData } from "@/context/DataContext"
 
 /**
@@ -18,7 +18,7 @@ export function NotificationBell() {
         today.setHours(0, 0, 0, 0)
 
         // Check for draft items in pipeline (items without status or Draft status)
-        const draftItems = commandoContents.filter(c => 
+        const draftItems = commandoContents.filter(c =>
             !c.status || c.status === 'Draft'
         ).slice(0, 3)
 
@@ -68,6 +68,32 @@ export function NotificationBell() {
             read: false
         })
 
+        // Load mention notifications from localStorage
+        const mentionNotifs = JSON.parse(localStorage.getItem('mentionNotifications') || '[]')
+        mentionNotifs.slice(-5).forEach(m => {
+            newNotifications.push({
+                id: `mention-${m.id}`,
+                type: 'mention',
+                title: `@${m.to} di-mention`,
+                message: `${m.from}: "${m.text?.slice(0, 50)}..."`,
+                time: new Date(m.createdAt),
+                read: m.read
+            })
+        })
+
+        // Load assignment notifications from localStorage
+        const assignNotifs = JSON.parse(localStorage.getItem('assignmentNotifications') || '[]')
+        assignNotifs.slice(-5).forEach(a => {
+            newNotifications.push({
+                id: `assign-${a.id}`,
+                type: 'assignment',
+                title: `Assigned to ${a.to}`,
+                message: `${a.from} memberikan tugas baru`,
+                time: new Date(a.createdAt),
+                read: a.read
+            })
+        })
+
         // Load read status from localStorage
         const readIds = JSON.parse(localStorage.getItem('readNotifications') || '[]')
         newNotifications.forEach(n => {
@@ -109,6 +135,8 @@ export function NotificationBell() {
             case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />
             case 'warning': return <AlertCircle className="h-4 w-4 text-yellow-500" />
             case 'error': return <AlertCircle className="h-4 w-4 text-red-500" />
+            case 'mention': return <AtSign className="h-4 w-4 text-purple-500" />
+            case 'assignment': return <UserPlus className="h-4 w-4 text-cyan-500" />
             default: return <Info className="h-4 w-4 text-blue-500" />
         }
     }
@@ -133,7 +161,7 @@ export function NotificationBell() {
                 <>
                     {/* Backdrop */}
                     <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-                    
+
                     {/* Panel */}
                     <div className="absolute right-0 top-12 w-80 bg-card border border-border rounded-lg shadow-lg z-50 max-h-[400px] overflow-hidden">
                         {/* Header */}
@@ -163,9 +191,8 @@ export function NotificationBell() {
                                     <div
                                         key={notification.id}
                                         onClick={() => markAsRead(notification.id)}
-                                        className={`p-3 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors ${
-                                            !notification.read ? 'bg-primary/5' : ''
-                                        }`}
+                                        className={`p-3 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors ${!notification.read ? 'bg-primary/5' : ''
+                                            }`}
                                     >
                                         <div className="flex gap-3">
                                             <div className="shrink-0 mt-0.5">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table"
 import { useData } from "@/context/DataContext"
+import { KPITargets } from "@/components/dashboard/KPITargets"
 import { FileText, Megaphone, TrendingUp, BarChart3, ArrowUpRight, Filter } from "lucide-react"
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 
@@ -172,6 +173,9 @@ export function Dashboard() {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* KPI Targets */}
+            <KPITargets />
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

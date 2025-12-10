@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { MessageSquare, Send, X, Clock } from "lucide-react"
 import { Button } from "@/components/ui/Button"
+import { MentionInput, USERS } from "@/components/ui/MentionInput"
 
 /**
  * Comments Panel for content items
@@ -110,14 +111,13 @@ export function CommentsPanel({
 
                 <div className="p-4 border-t border-border">
                     <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && addComment()}
-                            placeholder="Tulis komentar..."
-                            className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
+                        <div className="flex-1">
+                            <MentionInput
+                                value={newComment}
+                                onChange={setNewComment}
+                                placeholder="Tulis komentar... (@mention untuk tag)"
+                            />
+                        </div>
                         <Button onClick={addComment} disabled={!newComment.trim()}>
                             <Send className="h-4 w-4" />
                         </Button>
