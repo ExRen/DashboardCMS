@@ -10,20 +10,65 @@ const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
 
 /**
  * Parse Indonesian date string to Date object
- * @param {string} dateStr - Date string like "1 Januari 2025"
+ * Supports formats: "1 Januari 2025", "01 Januari 2025", "Thursday, February 13, 2025", etc.
+ * @param {string} dateStr - Date string
  * @returns {Date|null}
  */
 export function parseDate(dateStr) {
   if (!dateStr) return null
-  const parts = dateStr.split(' ')
-  if (parts.length >= 3) {
-    const day = parseInt(parts[0])
-    const month = MONTHS[parts[1]]
-    const year = parseInt(parts[2])
+  
+  // Clean the string
+  let cleaned = String(dateStr).trim()
+  
+  // Try to extract date parts using various patterns
+  // Pattern 1: "1 Januari 2025" or "01 Januari 2025"
+  const indonesianPattern = /(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/
+  const match1 = cleaned.match(indonesianPattern)
+  if (match1) {
+    const day = parseInt(match1[1])
+    const monthStr = match1[2]
+    const year = parseInt(match1[3])
+    const month = MONTHS[monthStr]
     if (!isNaN(day) && month !== undefined && !isNaN(year)) {
       return new Date(year, month, day)
     }
   }
+  
+  // Pattern 2: English format "Thursday, February 13, 2025" or "February 13, 2025"
+  const englishMonths = {
+    'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
+    'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
+  }
+  const englishPattern = /([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/
+  const match2 = cleaned.match(englishPattern)
+  if (match2) {
+    const monthStr = match2[1]
+    const day = parseInt(match2[2])
+    const year = parseInt(match2[3])
+    const month = englishMonths[monthStr]
+    if (!isNaN(day) && month !== undefined && !isNaN(year)) {
+      return new Date(year, month, day)
+    }
+  }
+  
+  // Pattern 3: ISO format "2025-01-13"
+  const isoPattern = /(\d{4})-(\d{2})-(\d{2})/
+  const match3 = cleaned.match(isoPattern)
+  if (match3) {
+    const year = parseInt(match3[1])
+    const month = parseInt(match3[2]) - 1
+    const day = parseInt(match3[3])
+    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+      return new Date(year, month, day)
+    }
+  }
+  
+  // Fallback: try native Date parsing
+  const fallback = new Date(cleaned)
+  if (!isNaN(fallback.getTime())) {
+    return fallback
+  }
+  
   return null
 }
 
@@ -53,8 +98,11 @@ export function filterByDateRange(data, dateField, dateFrom, dateTo) {
   return data.filter(item => {
     const date = parseDate(item[dateField])
     if (!date) return false
-    if (dateFrom && date < new Date(dateFrom)) return false
-    if (dateTo && date > new Date(dateTo)) return false
+    const fromDate = dateFrom ? new Date(dateFrom) : null
+    const toDate = dateTo ? new Date(dateTo) : null
+    if (toDate) toDate.setHours(23, 59, 59, 999) // Include whole end day
+    if (fromDate && date < fromDate) return false
+    if (toDate && date > toDate) return false
     return true
   })
 }

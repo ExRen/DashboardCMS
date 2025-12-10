@@ -273,7 +273,7 @@ export function Dashboard() {
                                     <Pie data={stats.pressTypes} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value">
                                         {stats.pressTypes.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                     </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#c7cedaff', border: '1px solid #374151', borderRadius: '8px' }} />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -290,7 +290,7 @@ export function Dashboard() {
                                     <Pie data={stats.commandoJenis} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value">
                                         {stats.commandoJenis.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                     </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#c7cedaff', border: '1px solid #374151', borderRadius: '8px' }} />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -327,7 +327,7 @@ export function Dashboard() {
                                 <Pie data={stats.commandoMedia} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
                                     {stats.commandoMedia.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                 </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} />
+                                <Tooltip contentStyle={{ backgroundColor: '#c7cedaff', border: '1px solid #374151', borderRadius: '8px' }} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>

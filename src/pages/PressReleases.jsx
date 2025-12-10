@@ -48,6 +48,8 @@ export function PressReleases() {
 
     // Memoized filter options
     const jenisOptions = useMemo(() => [...new Set(allData.map(p => p["JENIS RILIS"]).filter(Boolean))], [allData])
+    const kategoriOptions = useMemo(() => [...new Set(allData.map(p => p["KETEGORI"]).filter(Boolean))], [allData])
+    const lingkupOptions = useMemo(() => [...new Set(allData.map(p => p["LINGKUP"]).filter(Boolean))], [allData])
     const yearOptions = useMemo(() => [...new Set(allData.map(p => p.year).filter(Boolean))].sort((a, b) => b - a), [allData])
 
     // Use cached data from context
@@ -87,18 +89,7 @@ export function PressReleases() {
         setLoading(false)
     }
 
-    function parseDate(dateStr) {
-        if (!dateStr) return null
-        const months = { 'Januari': 0, 'Februari': 1, 'Maret': 2, 'April': 3, 'Mei': 4, 'Juni': 5, 'Juli': 6, 'Agustus': 7, 'September': 8, 'Oktober': 9, 'November': 10, 'Desember': 11 }
-        const parts = dateStr.split(' ')
-        if (parts.length >= 3) {
-            const day = parseInt(parts[0])
-            const month = months[parts[1]]
-            const year = parseInt(parts[2])
-            if (!isNaN(day) && month !== undefined && !isNaN(year)) return new Date(year, month, day)
-        }
-        return null
-    }
+    // parseDate is imported from @/lib/dateUtils
 
     function applyFiltersAndPagination() {
         let filtered = [...allData]
@@ -112,14 +103,27 @@ export function PressReleases() {
             filtered = filtered.filter(p => {
                 const date = parseDate(p["TANGGAL TERBIT"])
                 if (!date) return false
-                if (dateFrom && date < new Date(dateFrom)) return false
-                if (dateTo && date > new Date(dateTo)) return false
+                const fromDate = dateFrom ? new Date(dateFrom) : null
+                const toDate = dateTo ? new Date(dateTo) : null
+                if (toDate) toDate.setHours(23, 59, 59, 999) // Include the whole end day
+                if (fromDate && date < fromDate) return false
+                if (toDate && date > toDate) return false
                 return true
             })
         }
+        // Sort with proper date comparison
         filtered.sort((a, b) => {
-            const aVal = a[sortField] || ""
-            const bVal = b[sortField] || ""
+            let aVal, bVal
+            if (sortField === "TANGGAL TERBIT") {
+                aVal = parseDate(a["TANGGAL TERBIT"])?.getTime() || 0
+                bVal = parseDate(b["TANGGAL TERBIT"])?.getTime() || 0
+            } else if (sortField === "created_at") {
+                aVal = new Date(a.created_at || 0).getTime()
+                bVal = new Date(b.created_at || 0).getTime()
+            } else {
+                aVal = a[sortField] || ""
+                bVal = b[sortField] || ""
+            }
             if (sortOrder === 'asc') return aVal > bVal ? 1 : -1
             return aVal < bVal ? 1 : -1
         })
@@ -293,11 +297,29 @@ export function PressReleases() {
                                     <div><label className="text-sm font-medium">Tanggal Terbit</label><div className="mt-1"><DatePicker value={formData["TANGGAL TERBIT"]} onChange={(val) => setFormData({ ...formData, "TANGGAL TERBIT": val })} placeholder="Pilih atau ketik tanggal..." /></div></div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="text-sm font-medium">Jenis Rilis</label><input type="text" value={formData["JENIS RILIS"]} onChange={(e) => setFormData({ ...formData, "JENIS RILIS": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
-                                    <div><label className="text-sm font-medium">Kategori</label><input type="text" value={formData["KETEGORI"]} onChange={(e) => setFormData({ ...formData, "KETEGORI": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
+                                    <div>
+                                        <label className="text-sm font-medium">Jenis Rilis</label>
+                                        <select value={formData["JENIS RILIS"]} onChange={(e) => setFormData({ ...formData, "JENIS RILIS": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm">
+                                            <option value="">Pilih Jenis Rilis</option>
+                                            {jenisOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium">Kategori</label>
+                                        <select value={formData["KETEGORI"]} onChange={(e) => setFormData({ ...formData, "KETEGORI": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm">
+                                            <option value="">Pilih Kategori</option>
+                                            {kategoriOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="text-sm font-medium">Lingkup</label><input type="text" value={formData["LINGKUP"]} onChange={(e) => setFormData({ ...formData, "LINGKUP": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
+                                    <div>
+                                        <label className="text-sm font-medium">Lingkup</label>
+                                        <select value={formData["LINGKUP"]} onChange={(e) => setFormData({ ...formData, "LINGKUP": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm">
+                                            <option value="">Pilih Lingkup</option>
+                                            {lingkupOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
                                     <div><label className="text-sm font-medium">Writer Corcomm</label><input type="text" value={formData["WRITER CORCOMM"]} onChange={(e) => setFormData({ ...formData, "WRITER CORCOMM": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
                                 </div>
                                 <div><label className="text-sm font-medium">Link Website</label><input type="text" value={formData["LINK WEBSITE"]} onChange={(e) => setFormData({ ...formData, "LINK WEBSITE": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
@@ -372,6 +394,7 @@ export function PressReleases() {
                             <TableRow>
                                 <TableHead className="w-[40px]"><button onClick={toggleSelectAll}>{selectedIds.length === pressReleases.length && pressReleases.length > 0 ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}</button></TableHead>
                                 <TableHead className="w-[60px] cursor-pointer" onClick={() => handleSort("NO")}><div className="flex items-center">No {getSortIcon("NO")}</div></TableHead>
+                                <TableHead className="w-[100px] cursor-pointer" onClick={() => handleSort("NOMOR SIARAN PERS")}><div className="flex items-center">Nomor SP {getSortIcon("NOMOR SIARAN PERS")}</div></TableHead>
                                 <TableHead className="w-[120px] cursor-pointer" onClick={() => handleSort("TANGGAL TERBIT")}><div className="flex items-center">Tanggal {getSortIcon("TANGGAL TERBIT")}</div></TableHead>
                                 <TableHead className="cursor-pointer" onClick={() => handleSort("JUDUL SIARAN PERS")}><div className="flex items-center">Judul {getSortIcon("JUDUL SIARAN PERS")}</div></TableHead>
                                 <TableHead className="hidden md:table-cell">Jenis</TableHead>
@@ -384,6 +407,7 @@ export function PressReleases() {
                                 <TableRow key={pr.id || index} className={selectedIds.includes(pr.id) ? "bg-primary/5" : ""}>
                                     <TableCell><button onClick={() => toggleSelect(pr.id)}>{selectedIds.includes(pr.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}</button></TableCell>
                                     <TableCell className="font-medium">{pr["NO"] || "-"}</TableCell>
+                                    <TableCell className="text-sm font-mono text-muted-foreground">{pr["NOMOR SIARAN PERS"] || "-"}</TableCell>
                                     <TableCell className="text-sm">{pr["TANGGAL TERBIT"] || "-"}</TableCell>
                                     <TableCell className="max-w-[300px]"><span className="line-clamp-2">{pr["JUDUL SIARAN PERS"] || "-"}</span></TableCell>
                                     <TableCell className="hidden md:table-cell"><span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary">{pr["JENIS RILIS"] || "-"}</span></TableCell>

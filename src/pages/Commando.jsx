@@ -8,7 +8,8 @@ import { ExportMenu } from "@/components/ui/ExportMenu"
 import { useData } from "@/context/DataContext"
 import { supabase } from "@/lib/supabase"
 import { parseDate } from "@/lib/dateUtils"
-import { Search, Plus, X, Pencil, Trash2, Filter, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, RefreshCw } from "lucide-react"
+import { exportToCSV } from "@/lib/export"
+import { Search, Plus, X, Pencil, Trash2, Filter, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, RefreshCw, Download } from "lucide-react"
 
 const PAGE_SIZE = 50
 const INITIAL_FORM = {
@@ -24,9 +25,7 @@ export function Commando() {
     const searchRef = useRef(null)
 
     // All state variables
-    const [contents, setContents] = useState([])
     const [allData, setAllData] = useState([])
-    const [totalCount, setTotalCount] = useState(0)
     const [currentPage, setCurrentPage] = useState(1)
     const [loading, setLoading] = useState(true)
     const [selectedYear, setSelectedYear] = useState("")
@@ -56,14 +55,68 @@ export function Commando() {
     useEffect(() => {
         if (commandoContents.length > 0) {
             setAllData(commandoContents)
-            setTotalCount(commandoContents.length)
             setLoading(false)
         } else if (!dataLoading.commando) {
             fetchCommandoContents()
         }
     }, [commandoContents, dataLoading.commando])
 
-    useEffect(() => { applyFiltersAndPagination() }, [allData, sortField, sortOrder, selectedYear, selectedMedia, selectedJenis, searchTerm, dateFrom, dateTo, currentPage])
+    // Memoized filtered and sorted data to prevent race conditions
+    const { paginatedContents, filteredCount } = useMemo(() => {
+        let filtered = [...allData]
+        if (selectedYear) filtered = filtered.filter(c => c.year === parseInt(selectedYear))
+        if (selectedMedia) filtered = filtered.filter(c => c["MEDIA"] === selectedMedia)
+        if (selectedJenis) filtered = filtered.filter(c => c["JENIS KONTEN"] === selectedJenis)
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase()
+            filtered = filtered.filter(c => c["JUDUL KONTEN"]?.toLowerCase().includes(term) || c["HIGHLIGHT/CAPTIONS"]?.toLowerCase().includes(term))
+        }
+        if (dateFrom || dateTo) {
+            filtered = filtered.filter(c => {
+                const date = parseDate(c["TANGGAL"])
+                if (!date) return false
+                const fromDate = dateFrom ? new Date(dateFrom) : null
+                const toDate = dateTo ? new Date(dateTo) : null
+                if (toDate) toDate.setHours(23, 59, 59, 999)
+                if (fromDate && date < fromDate) return false
+                if (toDate && date > toDate) return false
+                return true
+            })
+        }
+        // Sort with proper type comparison
+        const sorted = [...filtered].sort((a, b) => {
+            let aVal, bVal
+            try {
+                if (sortField === "TANGGAL") {
+                    aVal = parseDate(a["TANGGAL"])?.getTime() || 0
+                    bVal = parseDate(b["TANGGAL"])?.getTime() || 0
+                } else if (sortField === "created_at") {
+                    aVal = new Date(a.created_at || 0).getTime()
+                    bVal = new Date(b.created_at || 0).getTime()
+                } else if (sortField === "NO") {
+                    aVal = parseInt(a[sortField]) || 0
+                    bVal = parseInt(b[sortField]) || 0
+                } else {
+                    aVal = String(a[sortField] || "").toLowerCase()
+                    bVal = String(b[sortField] || "").toLowerCase()
+                }
+                if (aVal === bVal) return 0
+                if (sortOrder === 'asc') return aVal > bVal ? 1 : -1
+                return aVal < bVal ? 1 : -1
+            } catch (err) {
+                return 0
+            }
+        })
+        const startIndex = (currentPage - 1) * PAGE_SIZE
+        return {
+            paginatedContents: sorted.slice(startIndex, startIndex + PAGE_SIZE),
+            filteredCount: sorted.length
+        }
+    }, [allData, sortField, sortOrder, selectedYear, selectedMedia, selectedJenis, searchTerm, dateFrom, dateTo, currentPage])
+
+    // Use memoized values
+    const contents = paginatedContents
+    const totalCount = filteredCount
 
     // Keyboard Shortcuts
     useEffect(() => {
@@ -83,52 +136,9 @@ export function Commando() {
 
     async function refreshData() {
         setLoading(true)
-        const data = await fetchCommandoContents(true) // Force refresh
+        const data = await fetchCommandoContents(true)
         setAllData(data)
-        setTotalCount(data.length)
         setLoading(false)
-    }
-
-    function parseDate(dateStr) {
-        if (!dateStr) return null
-        const months = { 'Januari': 0, 'Februari': 1, 'Maret': 2, 'April': 3, 'Mei': 4, 'Juni': 5, 'Juli': 6, 'Agustus': 7, 'September': 8, 'Oktober': 9, 'November': 10, 'Desember': 11 }
-        const parts = dateStr.split(' ')
-        if (parts.length >= 3) {
-            const day = parseInt(parts[0])
-            const month = months[parts[1]]
-            const year = parseInt(parts[2])
-            if (!isNaN(day) && month !== undefined && !isNaN(year)) return new Date(year, month, day)
-        }
-        return null
-    }
-
-    function applyFiltersAndPagination() {
-        let filtered = [...allData]
-        if (selectedYear) filtered = filtered.filter(c => c.year === parseInt(selectedYear))
-        if (selectedMedia) filtered = filtered.filter(c => c["MEDIA"] === selectedMedia)
-        if (selectedJenis) filtered = filtered.filter(c => c["JENIS KONTEN"] === selectedJenis)
-        if (searchTerm) {
-            const term = searchTerm.toLowerCase()
-            filtered = filtered.filter(c => c["JUDUL KONTEN"]?.toLowerCase().includes(term) || c["HIGHLIGHT/CAPTIONS"]?.toLowerCase().includes(term))
-        }
-        if (dateFrom || dateTo) {
-            filtered = filtered.filter(c => {
-                const date = parseDate(c["TANGGAL"])
-                if (!date) return false
-                if (dateFrom && date < new Date(dateFrom)) return false
-                if (dateTo && date > new Date(dateTo)) return false
-                return true
-            })
-        }
-        filtered.sort((a, b) => {
-            const aVal = a[sortField] || ""
-            const bVal = b[sortField] || ""
-            if (sortOrder === 'asc') return aVal > bVal ? 1 : -1
-            return aVal < bVal ? 1 : -1
-        })
-        const startIndex = (currentPage - 1) * PAGE_SIZE
-        setContents(filtered.slice(startIndex, startIndex + PAGE_SIZE))
-        setTotalCount(filtered.length)
     }
 
     function handleSort(field) {
@@ -160,7 +170,7 @@ export function Commando() {
                 if (error) throw error
                 toast.success(`${selectedIds.length} item berhasil dihapus!`)
                 setSelectedIds([])
-                await fetchAllData()
+                await refreshData()
             } catch (error) {
                 toast.error("Gagal menghapus: " + error.message)
             }
@@ -193,7 +203,7 @@ export function Commando() {
             try {
                 const { error } = await supabase.from('commando_contents').delete().eq('id', id)
                 if (error) throw error
-                await fetchAllData(); toast.success("Konten berhasil dihapus!")
+                await refreshData(); toast.success("Konten berhasil dihapus!")
             } catch (error) { toast.error("Gagal menghapus: " + error.message) }
         })
     }
@@ -208,7 +218,7 @@ export function Commando() {
                 const { error } = await supabase.from('commando_contents').insert([formData])
                 if (error) throw error; toast.success("Konten berhasil ditambahkan!")
             }
-            await fetchAllData(); resetForm(); setShowForm(false)
+            await refreshData(); resetForm(); setShowForm(false)
         } catch (error) { toast.error("Gagal menyimpan: " + error.message) }
         finally { setSubmitting(false) }
     }
@@ -241,7 +251,7 @@ export function Commando() {
             const dataToInsert = importData.map(row => ({ ...row, year: row.year ? parseInt(row.year) : 2025 }))
             const { error } = await supabase.from('commando_contents').insert(dataToInsert)
             if (error) throw error
-            toast.success(`${dataToInsert.length} data berhasil diimport!`); setShowImport(false); setImportData([]); await fetchAllData()
+            toast.success(`${dataToInsert.length} data berhasil diimport!`); setShowImport(false); setImportData([]); await refreshData()
         } catch (error) { toast.error("Gagal import: " + error.message) }
         finally { setImporting(false) }
     }
@@ -299,8 +309,20 @@ export function Commando() {
                                     <div><label className="text-sm font-medium">Creator</label><input type="text" value={formData["CREATOR"]} onChange={(e) => setFormData({ ...formData, "CREATOR": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="text-sm font-medium">Jenis Konten</label><input type="text" value={formData["JENIS KONTEN"]} onChange={(e) => setFormData({ ...formData, "JENIS KONTEN": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
-                                    <div><label className="text-sm font-medium">Media</label><input type="text" value={formData["MEDIA"]} onChange={(e) => setFormData({ ...formData, "MEDIA": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
+                                    <div>
+                                        <label className="text-sm font-medium">Jenis Konten</label>
+                                        <select value={formData["JENIS KONTEN"]} onChange={(e) => setFormData({ ...formData, "JENIS KONTEN": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm">
+                                            <option value="">Pilih Jenis Konten</option>
+                                            {jenisOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium">Media</label>
+                                        <select value={formData["MEDIA"]} onChange={(e) => setFormData({ ...formData, "MEDIA": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm">
+                                            <option value="">Pilih Media</option>
+                                            {mediaOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
                                 <div><label className="text-sm font-medium">Link</label><input type="text" value={formData["LINK"]} onChange={(e) => setFormData({ ...formData, "LINK": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
                                 <div className="flex gap-3 pt-2"><Button type="button" variant="outline" onClick={() => { setShowForm(false); resetForm(); }} className="flex-1">Batal</Button><Button type="submit" disabled={submitting} className="flex-1">{submitting ? "Menyimpan..." : (editingId ? "Update" : "Simpan")}</Button></div>
@@ -373,6 +395,7 @@ export function Commando() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[40px]"><button onClick={toggleSelectAll}>{selectedIds.length === contents.length && contents.length > 0 ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}</button></TableHead>
+                                <TableHead className="w-[50px] cursor-pointer" onClick={() => handleSort("created_at")}><div className="flex items-center">No {getSortIcon("created_at")}</div></TableHead>
                                 <TableHead className="w-[100px] cursor-pointer" onClick={() => handleSort("TANGGAL")}><div className="flex items-center">Tanggal {getSortIcon("TANGGAL")}</div></TableHead>
                                 <TableHead className="cursor-pointer" onClick={() => handleSort("JUDUL KONTEN")}><div className="flex items-center">Judul Konten {getSortIcon("JUDUL KONTEN")}</div></TableHead>
                                 <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort("JENIS KONTEN")}><div className="flex items-center">Jenis {getSortIcon("JENIS KONTEN")}</div></TableHead>
@@ -383,8 +406,9 @@ export function Commando() {
                         </TableHeader>
                         <TableBody>
                             {contents.map((item, index) => (
-                                <TableRow key={item.id || index} className={selectedIds.includes(item.id) ? "bg-primary/5" : ""}>
+                                <TableRow key={`${item.id}-${index}`} className={selectedIds.includes(item.id) ? "bg-primary/5" : ""}>
                                     <TableCell><button onClick={() => toggleSelect(item.id)}>{selectedIds.includes(item.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}</button></TableCell>
+                                    <TableCell className="font-medium text-muted-foreground">{(currentPage - 1) * PAGE_SIZE + index + 1}</TableCell>
                                     <TableCell className="text-sm">{item["TANGGAL"] || "-"}</TableCell>
                                     <TableCell className="max-w-[300px]"><span className="line-clamp-2">{item["JUDUL KONTEN"] || "-"}</span></TableCell>
                                     <TableCell className="hidden md:table-cell"><span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary">{item["JENIS KONTEN"] || "-"}</span></TableCell>

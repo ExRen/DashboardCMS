@@ -3,7 +3,6 @@ import {
     LayoutDashboard,
     FileText,
     BarChart3,
-    Settings,
     ChevronLeft,
     ChevronRight,
     Megaphone,
@@ -19,7 +18,6 @@ const menuItems = [
     { icon: Kanban, label: "Pipeline", id: "pipeline" },
     { icon: Calendar, label: "Kalender", id: "calendar" },
     { icon: BarChart3, label: "Analytics", id: "analytics" },
-    { icon: Settings, label: "Settings", id: "settings" },
 ]
 
 export function Sidebar({ currentPage, onNavigate }) {

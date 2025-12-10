@@ -54,22 +54,38 @@ export function Pipeline() {
     // Get base data from context
     const baseData = contentType === "commando" ? commandoContents : pressReleases
 
-    // Apply local updates to base data
+    // Apply local updates to base data and filter out invalid items
     const localData = useMemo(() => {
-        return baseData.map(item => {
-            if (localUpdates[item.id]) {
-                return { ...item, "PROCESS": localUpdates[item.id] }
-            }
-            return item
-        })
-    }, [baseData, localUpdates])
+        const titleField = contentType === "commando" ? "JUDUL KONTEN" : "JUDUL SIARAN PERS"
 
-    // Group data by status
+        return baseData
+            .filter(item => {
+                // Filter out items without valid title
+                const title = item[titleField]
+                if (!title) return false
+                // Filter out items where title is just a year (like "2024")
+                if (/^\d{4}$/.test(String(title).trim())) return false
+                return true
+            })
+            .map(item => {
+                if (localUpdates[item.id]) {
+                    return { ...item, "PROCESS": localUpdates[item.id] }
+                }
+                return item
+            })
+    }, [baseData, localUpdates, contentType])
+
+    // Group data by status (using Set to prevent duplicates)
     const groupedData = useMemo(() => {
         const groups = {}
+        const seenIds = new Set()
         STATUSES.forEach(s => groups[s.id] = [])
 
         localData.forEach(item => {
+            // Skip if already added (prevent duplicates)
+            if (seenIds.has(item.id)) return
+            seenIds.add(item.id)
+
             const status = getContentStatus(item)
             if (groups[status]) {
                 groups[status].push(item)
@@ -142,8 +158,8 @@ export function Pipeline() {
                         <button
                             onClick={() => setContentType("commando")}
                             className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${contentType === "commando"
-                                    ? "bg-card shadow text-foreground"
-                                    : "text-muted-foreground hover:text-foreground"
+                                ? "bg-card shadow text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
                                 }`}
                         >
                             COMMANDO
@@ -151,8 +167,8 @@ export function Pipeline() {
                         <button
                             onClick={() => setContentType("press")}
                             className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${contentType === "press"
-                                    ? "bg-card shadow text-foreground"
-                                    : "text-muted-foreground hover:text-foreground"
+                                ? "bg-card shadow text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
                                 }`}
                         >
                             Siaran Pers

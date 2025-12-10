@@ -372,7 +372,7 @@ export function Analytics() {
                                     <Pie data={Object.entries(filteredCommando.reduce((acc, c) => { const k = c["JENIS KONTEN"] || "Lainnya"; acc[k] = (acc[k] || 0) + 1; return acc }, {})).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 8)} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={2} dataKey="value">
                                         {Array(8).fill(0).map((_, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                     </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#c7cedaff', border: '1px solid #374151', borderRadius: '8px' }} />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -389,7 +389,7 @@ export function Analytics() {
                                     <Pie data={Object.entries(filteredPress.reduce((acc, p) => { const k = p["LINGKUP"] || "Lainnya"; acc[k] = (acc[k] || 0) + 1; return acc }, {})).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 8)} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={2} dataKey="value">
                                         {Array(8).fill(0).map((_, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                                     </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#c7cedaff', border: '1px solid #374151', borderRadius: '8px' }} />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>

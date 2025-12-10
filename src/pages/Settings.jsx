@@ -17,7 +17,7 @@ export function Settings() {
 
     return (
         <div className="space-y-6 max-w-2xl">
-            <Card>
+            {/* <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Database className="h-5 w-5" />
@@ -53,7 +53,7 @@ export function Settings() {
                         {saved ? "Tersimpan!" : "Simpan Konfigurasi"}
                     </Button>
                 </CardContent>
-            </Card>
+            </Card> */}
 
             <Card>
                 <CardHeader>
