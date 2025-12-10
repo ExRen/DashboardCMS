@@ -1,0 +1,419 @@
+import { useState, useEffect, useRef, useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table"
+import { Button } from "@/components/ui/Button"
+import { useToast } from "@/components/ui/Toast"
+import { DatePicker } from "@/components/ui/DatePicker"
+import { ExportMenu } from "@/components/ui/ExportMenu"
+import { useData } from "@/context/DataContext"
+import { supabase } from "@/lib/supabase"
+import { parseDate } from "@/lib/dateUtils"
+import { Search, Plus, X, Pencil, Trash2, Filter, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, RefreshCw } from "lucide-react"
+
+const PAGE_SIZE = 50
+const INITIAL_FORM = {
+    "NO": null, "TANGGAL": "", "JUDUL KONTEN": "", "JENIS KONTEN": "",
+    "KATEGORI DALAM AGSET BUMN": "", "JENIS MEDIA PLAN": "", "AKTUALISASI": "",
+    "MEDIA": "", "Jenis Konten": "", "HIGHLIGHT/CAPTIONS": "", "LINK": "",
+    "CREATOR": "", "PROCESS": "", "KETERANGAN/JENIS KONTEN": "", year: 2025
+}
+
+export function Commando() {
+    const toast = useToast()
+    const { commandoContents, loading: dataLoading, fetchCommandoContents } = useData()
+    const searchRef = useRef(null)
+
+    // All state variables
+    const [contents, setContents] = useState([])
+    const [allData, setAllData] = useState([])
+    const [totalCount, setTotalCount] = useState(0)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [loading, setLoading] = useState(true)
+    const [selectedYear, setSelectedYear] = useState("")
+    const [selectedMedia, setSelectedMedia] = useState("")
+    const [selectedJenis, setSelectedJenis] = useState("")
+    const [searchTerm, setSearchTerm] = useState("")
+    const [dateFrom, setDateFrom] = useState("")
+    const [dateTo, setDateTo] = useState("")
+    const [showForm, setShowForm] = useState(false)
+    const [showImport, setShowImport] = useState(false)
+    const [showShortcuts, setShowShortcuts] = useState(false)
+    const [editingId, setEditingId] = useState(null)
+    const [sortField, setSortField] = useState("NO")
+    const [sortOrder, setSortOrder] = useState("desc")
+    const [selectedIds, setSelectedIds] = useState([])
+    const [formData, setFormData] = useState(INITIAL_FORM)
+    const [submitting, setSubmitting] = useState(false)
+    const [importData, setImportData] = useState([])
+    const [importing, setImporting] = useState(false)
+
+    // Memoized filter options
+    const mediaOptions = useMemo(() => [...new Set(allData.map(c => c["MEDIA"]).filter(Boolean))], [allData])
+    const jenisOptions = useMemo(() => [...new Set(allData.map(c => c["JENIS KONTEN"]).filter(Boolean))], [allData])
+    const yearOptions = useMemo(() => [...new Set(allData.map(c => c.year).filter(Boolean))].sort((a, b) => b - a), [allData])
+
+    // Use cached data from context
+    useEffect(() => {
+        if (commandoContents.length > 0) {
+            setAllData(commandoContents)
+            setTotalCount(commandoContents.length)
+            setLoading(false)
+        } else if (!dataLoading.commando) {
+            fetchCommandoContents()
+        }
+    }, [commandoContents, dataLoading.commando])
+
+    useEffect(() => { applyFiltersAndPagination() }, [allData, sortField, sortOrder, selectedYear, selectedMedia, selectedJenis, searchTerm, dateFrom, dateTo, currentPage])
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        function handleKeyDown(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                if (e.key === 'Escape') { setShowForm(false); setShowImport(false); setShowShortcuts(false) }
+                return
+            }
+            if (e.ctrlKey && e.key === 'n') { e.preventDefault(); resetForm(); setShowForm(true) }
+            if (e.ctrlKey && e.key === 'f') { e.preventDefault(); searchRef.current?.focus() }
+            if (e.key === 'Escape') { setShowForm(false); setShowImport(false); setShowShortcuts(false) }
+            if (e.key === '?') setShowShortcuts(s => !s)
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
+
+    async function refreshData() {
+        setLoading(true)
+        const data = await fetchCommandoContents(true) // Force refresh
+        setAllData(data)
+        setTotalCount(data.length)
+        setLoading(false)
+    }
+
+    function parseDate(dateStr) {
+        if (!dateStr) return null
+        const months = { 'Januari': 0, 'Februari': 1, 'Maret': 2, 'April': 3, 'Mei': 4, 'Juni': 5, 'Juli': 6, 'Agustus': 7, 'September': 8, 'Oktober': 9, 'November': 10, 'Desember': 11 }
+        const parts = dateStr.split(' ')
+        if (parts.length >= 3) {
+            const day = parseInt(parts[0])
+            const month = months[parts[1]]
+            const year = parseInt(parts[2])
+            if (!isNaN(day) && month !== undefined && !isNaN(year)) return new Date(year, month, day)
+        }
+        return null
+    }
+
+    function applyFiltersAndPagination() {
+        let filtered = [...allData]
+        if (selectedYear) filtered = filtered.filter(c => c.year === parseInt(selectedYear))
+        if (selectedMedia) filtered = filtered.filter(c => c["MEDIA"] === selectedMedia)
+        if (selectedJenis) filtered = filtered.filter(c => c["JENIS KONTEN"] === selectedJenis)
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase()
+            filtered = filtered.filter(c => c["JUDUL KONTEN"]?.toLowerCase().includes(term) || c["HIGHLIGHT/CAPTIONS"]?.toLowerCase().includes(term))
+        }
+        if (dateFrom || dateTo) {
+            filtered = filtered.filter(c => {
+                const date = parseDate(c["TANGGAL"])
+                if (!date) return false
+                if (dateFrom && date < new Date(dateFrom)) return false
+                if (dateTo && date > new Date(dateTo)) return false
+                return true
+            })
+        }
+        filtered.sort((a, b) => {
+            const aVal = a[sortField] || ""
+            const bVal = b[sortField] || ""
+            if (sortOrder === 'asc') return aVal > bVal ? 1 : -1
+            return aVal < bVal ? 1 : -1
+        })
+        const startIndex = (currentPage - 1) * PAGE_SIZE
+        setContents(filtered.slice(startIndex, startIndex + PAGE_SIZE))
+        setTotalCount(filtered.length)
+    }
+
+    function handleSort(field) {
+        if (sortField === field) setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+        else { setSortField(field); setSortOrder('desc') }
+        setCurrentPage(1)
+    }
+
+    function getSortIcon(field) {
+        if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1" />
+        return sortOrder === 'asc' ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />
+    }
+
+    function toggleSelectAll() {
+        if (selectedIds.length === contents.length) setSelectedIds([])
+        else setSelectedIds(contents.map(c => c.id))
+    }
+
+    function toggleSelect(id) {
+        if (selectedIds.includes(id)) setSelectedIds(selectedIds.filter(i => i !== id))
+        else setSelectedIds([...selectedIds, id])
+    }
+
+    async function handleBulkDelete() {
+        if (selectedIds.length === 0) return
+        toast.confirm(`Hapus ${selectedIds.length} item yang dipilih?`, async () => {
+            try {
+                const { error } = await supabase.from('commando_contents').delete().in('id', selectedIds)
+                if (error) throw error
+                toast.success(`${selectedIds.length} item berhasil dihapus!`)
+                setSelectedIds([])
+                await fetchAllData()
+            } catch (error) {
+                toast.error("Gagal menghapus: " + error.message)
+            }
+        })
+    }
+
+    function handleExportSelected() {
+        const dataToExport = allData.filter(c => selectedIds.includes(c.id)).map(c => ({
+            "NO": c["NO"], "TANGGAL": c["TANGGAL"], "JUDUL KONTEN": c["JUDUL KONTEN"],
+            "JENIS KONTEN": c["JENIS KONTEN"], "MEDIA": c["MEDIA"], "CREATOR": c["CREATOR"],
+            "AKTUALISASI": c["AKTUALISASI"], "LINK": c["LINK"], "year": c.year
+        }))
+        exportToCSV(dataToExport, 'commando_selected')
+        toast.success(`${dataToExport.length} data berhasil diexport!`)
+    }
+
+    function resetForm() {
+        setFormData({ "NO": null, "TANGGAL": "", "JUDUL KONTEN": "", "JENIS KONTEN": "", "KATEGORI DALAM AGSET BUMN": "", "JENIS MEDIA PLAN": "", "AKTUALISASI": "", "MEDIA": "", "Jenis Konten": "", "HIGHLIGHT/CAPTIONS": "", "LINK": "", "CREATOR": "", "PROCESS": "", "KETERANGAN/JENIS KONTEN": "", year: 2025 })
+        setEditingId(null)
+    }
+
+    function handleEdit(item) {
+        setEditingId(item.id)
+        setFormData({ "NO": item["NO"] || null, "TANGGAL": item["TANGGAL"] || "", "JUDUL KONTEN": item["JUDUL KONTEN"] || "", "JENIS KONTEN": item["JENIS KONTEN"] || "", "KATEGORI DALAM AGSET BUMN": item["KATEGORI DALAM AGSET BUMN"] || "", "JENIS MEDIA PLAN": item["JENIS MEDIA PLAN"] || "", "AKTUALISASI": item["AKTUALISASI"] || "", "MEDIA": item["MEDIA"] || "", "Jenis Konten": item["Jenis Konten"] || "", "HIGHLIGHT/CAPTIONS": item["HIGHLIGHT/CAPTIONS"] || "", "LINK": item["LINK"] || "", "CREATOR": item["CREATOR"] || "", "PROCESS": item["PROCESS"] || "", "KETERANGAN/JENIS KONTEN": item["KETERANGAN/JENIS KONTEN"] || "", year: item.year || 2025 })
+        setShowForm(true)
+    }
+
+    async function handleDelete(id) {
+        toast.confirm("Apakah Anda yakin ingin menghapus konten ini?", async () => {
+            try {
+                const { error } = await supabase.from('commando_contents').delete().eq('id', id)
+                if (error) throw error
+                await fetchAllData(); toast.success("Konten berhasil dihapus!")
+            } catch (error) { toast.error("Gagal menghapus: " + error.message) }
+        })
+    }
+
+    async function handleSubmit(e) {
+        e.preventDefault(); setSubmitting(true)
+        try {
+            if (editingId) {
+                const { error } = await supabase.from('commando_contents').update(formData).eq('id', editingId)
+                if (error) throw error; toast.success("Konten berhasil diperbarui!")
+            } else {
+                const { error } = await supabase.from('commando_contents').insert([formData])
+                if (error) throw error; toast.success("Konten berhasil ditambahkan!")
+            }
+            await fetchAllData(); resetForm(); setShowForm(false)
+        } catch (error) { toast.error("Gagal menyimpan: " + error.message) }
+        finally { setSubmitting(false) }
+    }
+
+    function handleExport() {
+        const dataToExport = allData.map(c => ({ "NO": c["NO"], "TANGGAL": c["TANGGAL"], "JUDUL KONTEN": c["JUDUL KONTEN"], "JENIS KONTEN": c["JENIS KONTEN"], "MEDIA": c["MEDIA"], "CREATOR": c["CREATOR"], "AKTUALISASI": c["AKTUALISASI"], "LINK": c["LINK"], "year": c.year }))
+        exportToCSV(dataToExport, 'commando'); toast.success("Data berhasil diexport!")
+    }
+
+    function handleFileUpload(e) {
+        const file = e.target.files?.[0]; if (!file) return
+        const reader = new FileReader()
+        reader.onload = (event) => {
+            const text = event.target?.result; const lines = text.split('\n')
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
+            const data = []
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue
+                const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+                const row = {}; headers.forEach((h, idx) => { row[h] = values[idx] || '' }); data.push(row)
+            }
+            setImportData(data)
+        }
+        reader.readAsText(file)
+    }
+
+    async function handleImport() {
+        if (importData.length === 0) return; setImporting(true)
+        try {
+            const dataToInsert = importData.map(row => ({ ...row, year: row.year ? parseInt(row.year) : 2025 }))
+            const { error } = await supabase.from('commando_contents').insert(dataToInsert)
+            if (error) throw error
+            toast.success(`${dataToInsert.length} data berhasil diimport!`); setShowImport(false); setImportData([]); await fetchAllData()
+        } catch (error) { toast.error("Gagal import: " + error.message) }
+        finally { setImporting(false) }
+    }
+
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE)
+
+    if (loading) return <div className="flex items-center justify-center h-full"><div className="text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div><p className="text-sm text-muted-foreground mt-2">Memuat data...</p></div></div>
+
+    return (
+        <div className="space-y-6">
+            {/* Keyboard Shortcuts Modal */}
+            {showShortcuts && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowShortcuts(false)}>
+                    <Card className="w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><Keyboard className="h-5 w-5" />Keyboard Shortcuts</CardTitle></CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {[['Ctrl+N', 'Tambah data baru'], ['Ctrl+E', 'Export CSV'], ['Ctrl+F', 'Focus ke search'], ['Esc', 'Tutup modal'], ['?', 'Toggle shortcuts']].map(([key, desc]) => (
+                                    <div key={key} className="flex items-center justify-between"><kbd className="px-2 py-1 bg-muted rounded text-sm font-mono">{key}</kbd><span className="text-sm text-muted-foreground">{desc}</span></div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Import Modal */}
+            {showImport && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto">
+                        <CardHeader className="flex flex-row items-center justify-between"><CardTitle>Import CSV</CardTitle><button onClick={() => { setShowImport(false); setImportData([]); }}><X className="h-5 w-5" /></button></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div><label className="text-sm font-medium">Pilih File CSV</label><input type="file" accept=".csv" onChange={handleFileUpload} className="w-full mt-1 p-2 rounded-lg bg-muted border border-border text-sm" /></div>
+                            {importData.length > 0 && (<>
+                                <div className="text-sm text-muted-foreground">{importData.length} baris data siap diimport</div>
+                                <div className="max-h-48 overflow-auto border rounded-lg"><table className="w-full text-xs"><thead className="bg-muted"><tr>{Object.keys(importData[0]).slice(0, 4).map(key => <th key={key} className="p-2 text-left">{key}</th>)}</tr></thead><tbody>{importData.slice(0, 5).map((row, idx) => (<tr key={idx} className="border-t">{Object.values(row).slice(0, 4).map((val, i) => <td key={i} className="p-2 truncate max-w-[150px]">{val}</td>)}</tr>))}</tbody></table></div>
+                                <div className="flex gap-3"><Button variant="outline" onClick={() => { setShowImport(false); setImportData([]); }} className="flex-1">Batal</Button><Button onClick={handleImport} disabled={importing} className="flex-1">{importing ? "Mengimport..." : `Import ${importData.length} Data`}</Button></div>
+                            </>)}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Form Modal */}
+            {showForm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <Card className="w-full max-w-3xl mx-4 max-h-[90vh] overflow-auto">
+                        <CardHeader className="flex flex-row items-center justify-between"><CardTitle>{editingId ? "Edit Konten" : "Tambah Konten Baru"}</CardTitle><button onClick={() => { setShowForm(false); resetForm(); }}><X className="h-5 w-5" /></button></CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div><label className="text-sm font-medium">Judul Konten *</label><textarea required value={formData["JUDUL KONTEN"]} onChange={(e) => setFormData({ ...formData, "JUDUL KONTEN": e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg bg-muted border border-border text-sm" rows={2} /></div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div><label className="text-sm font-medium">Tanggal</label><div className="mt-1"><DatePicker value={formData["TANGGAL"]} onChange={(val) => setFormData({ ...formData, "TANGGAL": val })} placeholder="Pilih atau ketik tanggal..." /></div></div>
+                                    <div><label className="text-sm font-medium">Tahun</label><select value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm"><option value={2024}>2024</option><option value={2025}>2025</option></select></div>
+                                    <div><label className="text-sm font-medium">Creator</label><input type="text" value={formData["CREATOR"]} onChange={(e) => setFormData({ ...formData, "CREATOR": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div><label className="text-sm font-medium">Jenis Konten</label><input type="text" value={formData["JENIS KONTEN"]} onChange={(e) => setFormData({ ...formData, "JENIS KONTEN": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
+                                    <div><label className="text-sm font-medium">Media</label><input type="text" value={formData["MEDIA"]} onChange={(e) => setFormData({ ...formData, "MEDIA": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
+                                </div>
+                                <div><label className="text-sm font-medium">Link</label><input type="text" value={formData["LINK"]} onChange={(e) => setFormData({ ...formData, "LINK": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
+                                <div className="flex gap-3 pt-2"><Button type="button" variant="outline" onClick={() => { setShowForm(false); resetForm(); }} className="flex-1">Batal</Button><Button type="submit" disabled={submitting} className="flex-1">{submitting ? "Menyimpan..." : (editingId ? "Update" : "Simpan")}</Button></div>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-4">
+                <Card><CardContent className="pt-6"><div className="text-2xl font-bold">{allData.length}</div><p className="text-xs text-muted-foreground">Total Konten</p></CardContent></Card>
+                <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-green-600">{allData.filter(c => c["AKTUALISASI"] === 'Realisasi').length}</div><p className="text-xs text-muted-foreground">Realisasi</p></CardContent></Card>
+                <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-blue-600">{mediaOptions.length}</div><p className="text-xs text-muted-foreground">Platform</p></CardContent></Card>
+                <Card><CardContent className="pt-6"><div className="text-2xl font-bold text-purple-600">{jenisOptions.length}</div><p className="text-xs text-muted-foreground">Jenis Konten</p></CardContent></Card>
+            </div>
+
+            {/* Filters */}
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <input ref={searchRef} type="text" placeholder="Cari judul atau caption... (Ctrl+F)" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full h-10 pl-9 pr-4 rounded-lg bg-muted border-none text-sm" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Filter className="h-4 w-4 text-muted-foreground" />
+                                <select value={selectedYear} onChange={(e) => { setSelectedYear(e.target.value); setCurrentPage(1); }} className="h-10 px-3 rounded-lg bg-muted border-none text-sm"><option value="">Semua Tahun</option>{yearOptions.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                                <select value={selectedMedia} onChange={(e) => { setSelectedMedia(e.target.value); setCurrentPage(1); }} className="h-10 px-3 rounded-lg bg-muted border-none text-sm"><option value="">Semua Media</option>{mediaOptions.map(m => <option key={m} value={m}>{m}</option>)}</select>
+                            </div>
+                        </div>
+                        {/* Date Range Filter */}
+                        <div className="flex flex-col sm:flex-row gap-4 items-center">
+                            <Calendar className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                            <span className="text-sm text-muted-foreground">Rentang Tanggal:</span>
+                            <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }} className="h-10 px-3 rounded-lg bg-muted border-none text-sm" />
+                            <span className="text-sm">s/d</span>
+                            <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }} className="h-10 px-3 rounded-lg bg-muted border-none text-sm" />
+                            {(dateFrom || dateTo) && <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-xs text-primary hover:underline">Reset</button>}
+                            <div className="flex gap-2 ml-auto">
+                                <ExportMenu data={allData} filename="commando" title="Data COMMANDO" />
+                                <Button variant="outline" onClick={() => setShowImport(true)}><Upload className="h-4 w-4" />Import</Button>
+                                <Button onClick={() => { resetForm(); setShowForm(true); }}><Plus className="h-4 w-4" />Tambah</Button>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+                <Card className="bg-primary/5 border-primary/20">
+                    <CardContent className="py-3 flex items-center justify-between">
+                        <span className="text-sm font-medium">{selectedIds.length} item dipilih</span>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={handleExportSelected}><Download className="h-4 w-4" />Export Pilihan</Button>
+                            <Button variant="destructive" size="sm" onClick={handleBulkDelete}><Trash2 className="h-4 w-4" />Hapus Pilihan</Button>
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>Batal</Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Data Table */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between"><CardTitle className="text-base">Daftar Konten COMMANDO ({totalCount})</CardTitle><div className="text-sm text-muted-foreground">Hal. {currentPage}/{totalPages || 1}</div></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[40px]"><button onClick={toggleSelectAll}>{selectedIds.length === contents.length && contents.length > 0 ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}</button></TableHead>
+                                <TableHead className="w-[100px] cursor-pointer" onClick={() => handleSort("TANGGAL")}><div className="flex items-center">Tanggal {getSortIcon("TANGGAL")}</div></TableHead>
+                                <TableHead className="cursor-pointer" onClick={() => handleSort("JUDUL KONTEN")}><div className="flex items-center">Judul Konten {getSortIcon("JUDUL KONTEN")}</div></TableHead>
+                                <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort("JENIS KONTEN")}><div className="flex items-center">Jenis {getSortIcon("JENIS KONTEN")}</div></TableHead>
+                                <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort("MEDIA")}><div className="flex items-center">Media {getSortIcon("MEDIA")}</div></TableHead>
+                                <TableHead className="hidden lg:table-cell">Creator</TableHead>
+                                <TableHead className="w-[100px]">Aksi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {contents.map((item, index) => (
+                                <TableRow key={item.id || index} className={selectedIds.includes(item.id) ? "bg-primary/5" : ""}>
+                                    <TableCell><button onClick={() => toggleSelect(item.id)}>{selectedIds.includes(item.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}</button></TableCell>
+                                    <TableCell className="text-sm">{item["TANGGAL"] || "-"}</TableCell>
+                                    <TableCell className="max-w-[300px]"><span className="line-clamp-2">{item["JUDUL KONTEN"] || "-"}</span></TableCell>
+                                    <TableCell className="hidden md:table-cell"><span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary">{item["JENIS KONTEN"] || "-"}</span></TableCell>
+                                    <TableCell className="hidden md:table-cell text-sm">{item["MEDIA"] || "-"}</TableCell>
+                                    <TableCell className="hidden lg:table-cell text-sm">{item["CREATOR"] || "-"}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-1">
+                                            {item["LINK"] && <a href={item["LINK"]} target="_blank" rel="noopener noreferrer" className="p-1.5 text-primary hover:bg-primary/10 rounded"><ExternalLink className="h-4 w-4" /></a>}
+                                            <button onClick={() => handleEdit(item)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"><Pencil className="h-4 w-4" /></button>
+                                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-600 hover:bg-red-100 rounded"><Trash2 className="h-4 w-4" /></button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    {contents.length === 0 && <div className="text-center py-10 text-muted-foreground">Tidak ada data.</div>}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                            <div className="text-sm text-muted-foreground">{((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount)} dari {totalCount}</div>
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}><ChevronLeft className="h-4 w-4" /></Button>
+                                {[...Array(Math.min(5, totalPages))].map((_, i) => { let pageNum = totalPages <= 5 ? i + 1 : currentPage <= 3 ? i + 1 : currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i; return <Button key={pageNum} variant={currentPage === pageNum ? "default" : "outline"} size="sm" onClick={() => setCurrentPage(pageNum)}>{pageNum}</Button> })}
+                                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}><ChevronRight className="h-4 w-4" /></Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
