@@ -107,12 +107,7 @@ export function Login() {
                         </button>
                     </form>
 
-                    {/* Demo Credentials */}
-                    {/* <div className="mt-6 pt-6 border-t border-border">
-                        <p className="text-xs text-muted-foreground text-center">
-                            Demo: admin@asabri.co.id / admin123
-                        </p>
-                    </div> */}
+
                 </div>
 
                 {/* Footer */}
