@@ -108,11 +108,11 @@ export function Login() {
                     </form>
 
                     {/* Demo Credentials */}
-                    <div className="mt-6 pt-6 border-t border-border">
+                    {/* <div className="mt-6 pt-6 border-t border-border">
                         <p className="text-xs text-muted-foreground text-center">
                             Demo: admin@asabri.co.id / admin123
                         </p>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Footer */}
