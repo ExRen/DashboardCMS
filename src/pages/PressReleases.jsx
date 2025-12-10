@@ -8,6 +8,8 @@ import { ExportMenu } from "@/components/ui/ExportMenu"
 import { useData } from "@/context/DataContext"
 import { supabase } from "@/lib/supabase"
 import { parseDate } from "@/lib/dateUtils"
+import { SmartSearch } from "@/components/ui/SmartSearch"
+import { UserPreferences } from "@/components/ui/UserPreferences"
 import { ExternalLink, Filter, Search, Plus, X, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard } from "lucide-react"
 
 const PAGE_SIZE = 50
@@ -45,6 +47,25 @@ export function PressReleases() {
     const [submitting, setSubmitting] = useState(false)
     const [importData, setImportData] = useState([])
     const [importing, setImporting] = useState(false)
+    const [visibleColumns, setVisibleColumns] = useState(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem('pressVisibleColumns'))
+            return saved || ["NO", "TANGGAL TERBIT", "NOMOR SIARAN PERS", "JUDUL SIARAN PERS", "JENIS RILIS", "KETEGORI", "LINK"]
+        } catch { return ["NO", "TANGGAL TERBIT", "NOMOR SIARAN PERS", "JUDUL SIARAN PERS", "JENIS RILIS", "KETEGORI", "LINK"] }
+    })
+
+    // Table columns config
+    const TABLE_COLUMNS = [
+        { key: "NO", label: "No" },
+        { key: "TANGGAL TERBIT", label: "Tanggal" },
+        { key: "NOMOR SIARAN PERS", label: "Nomor SP" },
+        { key: "JUDUL SIARAN PERS", label: "Judul" },
+        { key: "JENIS RILIS", label: "Jenis Rilis" },
+        { key: "KETEGORI", label: "Kategori" },
+        { key: "WRITER CORCOMM", label: "Writer" },
+        { key: "LINGKUP", label: "Lingkup" },
+        { key: "LINK", label: "Link/Aksi" }
+    ]
 
     // Memoized filter options
     const jenisOptions = useMemo(() => [...new Set(allData.map(p => p["JENIS RILIS"]).filter(Boolean))], [allData])
@@ -343,9 +364,13 @@ export function PressReleases() {
                 <CardContent className="pt-6">
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <input ref={searchRef} type="text" placeholder="Cari judul atau nomor... (Ctrl+F)" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full h-10 pl-9 pr-4 rounded-lg bg-muted border-none text-sm" />
+                            <div className="flex-1">
+                                <SmartSearch
+                                    data={allData}
+                                    searchKeys={["JUDUL SIARAN PERS", "NOMOR SIARAN PERS", "WRITER CORCOMM"]}
+                                    onSearch={(term) => { setSearchTerm(term); setCurrentPage(1); }}
+                                    placeholder="Smart search judul, nomor, writer... (Ctrl+F)"
+                                />
                             </div>
                             <div className="flex items-center gap-2">
                                 <Filter className="h-4 w-4 text-muted-foreground" />
@@ -387,38 +412,56 @@ export function PressReleases() {
 
             {/* Data Table */}
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between"><CardTitle className="text-base">Daftar Siaran Pers ({totalCount})</CardTitle><div className="text-sm text-muted-foreground">Hal. {currentPage}/{totalPages || 1}</div></CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-base">Daftar Siaran Pers ({totalCount})</CardTitle>
+                    <div className="flex items-center gap-3">
+                        <UserPreferences 
+                            columns={TABLE_COLUMNS}
+                            onColumnChange={(cols) => {
+                                setVisibleColumns(cols)
+                                localStorage.setItem('pressVisibleColumns', JSON.stringify(cols))
+                            }}
+                        />
+                        <div className="text-sm text-muted-foreground">Hal. {currentPage}/{totalPages || 1}</div>
+                    </div>
+                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[40px]"><button onClick={toggleSelectAll}>{selectedIds.length === pressReleases.length && pressReleases.length > 0 ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}</button></TableHead>
-                                <TableHead className="w-[60px] cursor-pointer" onClick={() => handleSort("NO")}><div className="flex items-center">No {getSortIcon("NO")}</div></TableHead>
-                                <TableHead className="w-[100px] cursor-pointer" onClick={() => handleSort("NOMOR SIARAN PERS")}><div className="flex items-center">Nomor SP {getSortIcon("NOMOR SIARAN PERS")}</div></TableHead>
-                                <TableHead className="w-[120px] cursor-pointer" onClick={() => handleSort("TANGGAL TERBIT")}><div className="flex items-center">Tanggal {getSortIcon("TANGGAL TERBIT")}</div></TableHead>
-                                <TableHead className="cursor-pointer" onClick={() => handleSort("JUDUL SIARAN PERS")}><div className="flex items-center">Judul {getSortIcon("JUDUL SIARAN PERS")}</div></TableHead>
-                                <TableHead className="hidden md:table-cell">Jenis</TableHead>
-                                <TableHead className="hidden lg:table-cell">Lingkup</TableHead>
-                                <TableHead className="w-[100px]">Aksi</TableHead>
+                                {visibleColumns.includes("NO") && <TableHead className="w-[60px] cursor-pointer" onClick={() => handleSort("NO")}><div className="flex items-center">No {getSortIcon("NO")}</div></TableHead>}
+                                {visibleColumns.includes("TANGGAL TERBIT") && <TableHead className="w-[120px] cursor-pointer" onClick={() => handleSort("TANGGAL TERBIT")}><div className="flex items-center">Tanggal {getSortIcon("TANGGAL TERBIT")}</div></TableHead>}
+                                {visibleColumns.includes("NOMOR SIARAN PERS") && <TableHead className="w-[100px] cursor-pointer" onClick={() => handleSort("NOMOR SIARAN PERS")}><div className="flex items-center">Nomor SP {getSortIcon("NOMOR SIARAN PERS")}</div></TableHead>}
+                                {visibleColumns.includes("JUDUL SIARAN PERS") && <TableHead className="cursor-pointer" onClick={() => handleSort("JUDUL SIARAN PERS")}><div className="flex items-center">Judul {getSortIcon("JUDUL SIARAN PERS")}</div></TableHead>}
+                                {visibleColumns.includes("JENIS RILIS") && <TableHead>Jenis</TableHead>}
+                                {visibleColumns.includes("KETEGORI") && <TableHead>Kategori</TableHead>}
+                                {visibleColumns.includes("WRITER CORCOMM") && <TableHead>Writer</TableHead>}
+                                {visibleColumns.includes("LINGKUP") && <TableHead>Lingkup</TableHead>}
+                                {visibleColumns.includes("LINK") && <TableHead className="w-[100px]">Aksi</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {pressReleases.map((pr, index) => (
                                 <TableRow key={pr.id || index} className={selectedIds.includes(pr.id) ? "bg-primary/5" : ""}>
                                     <TableCell><button onClick={() => toggleSelect(pr.id)}>{selectedIds.includes(pr.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}</button></TableCell>
-                                    <TableCell className="font-medium">{pr["NO"] || "-"}</TableCell>
-                                    <TableCell className="text-sm font-mono text-muted-foreground">{pr["NOMOR SIARAN PERS"] || "-"}</TableCell>
-                                    <TableCell className="text-sm">{pr["TANGGAL TERBIT"] || "-"}</TableCell>
-                                    <TableCell className="max-w-[300px]"><span className="line-clamp-2">{pr["JUDUL SIARAN PERS"] || "-"}</span></TableCell>
-                                    <TableCell className="hidden md:table-cell"><span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary">{pr["JENIS RILIS"] || "-"}</span></TableCell>
-                                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{pr["LINGKUP"] || "-"}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-1">
-                                            {pr["LINK WEBSITE"] && <a href={pr["LINK WEBSITE"]} target="_blank" rel="noopener noreferrer" className="p-1.5 text-primary hover:bg-primary/10 rounded"><ExternalLink className="h-4 w-4" /></a>}
-                                            <button onClick={() => handleEdit(pr)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"><Pencil className="h-4 w-4" /></button>
-                                            <button onClick={() => handleDelete(pr.id)} className="p-1.5 text-red-600 hover:bg-red-100 rounded"><Trash2 className="h-4 w-4" /></button>
-                                        </div>
-                                    </TableCell>
+                                    {visibleColumns.includes("NO") && <TableCell className="font-medium">{pr["NO"] || "-"}</TableCell>}
+                                    {visibleColumns.includes("TANGGAL TERBIT") && <TableCell className="text-sm">{pr["TANGGAL TERBIT"] || "-"}</TableCell>}
+                                    {visibleColumns.includes("NOMOR SIARAN PERS") && <TableCell className="text-sm font-mono text-muted-foreground">{pr["NOMOR SIARAN PERS"] || "-"}</TableCell>}
+                                    {visibleColumns.includes("JUDUL SIARAN PERS") && <TableCell className="max-w-[300px]"><span className="line-clamp-2">{pr["JUDUL SIARAN PERS"] || "-"}</span></TableCell>}
+                                    {visibleColumns.includes("JENIS RILIS") && <TableCell><span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary">{pr["JENIS RILIS"] || "-"}</span></TableCell>}
+                                    {visibleColumns.includes("KETEGORI") && <TableCell className="text-sm">{pr["KETEGORI"] || "-"}</TableCell>}
+                                    {visibleColumns.includes("WRITER CORCOMM") && <TableCell className="text-sm">{pr["WRITER CORCOMM"] || "-"}</TableCell>}
+                                    {visibleColumns.includes("LINGKUP") && <TableCell className="text-sm text-muted-foreground">{pr["LINGKUP"] || "-"}</TableCell>}
+                                    {visibleColumns.includes("LINK") && (
+                                        <TableCell>
+                                            <div className="flex items-center gap-1">
+                                                {pr["LINK WEBSITE"] && <a href={pr["LINK WEBSITE"]} target="_blank" rel="noopener noreferrer" className="p-1.5 text-primary hover:bg-primary/10 rounded"><ExternalLink className="h-4 w-4" /></a>}
+                                                <button onClick={() => handleEdit(pr)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"><Pencil className="h-4 w-4" /></button>
+                                                <button onClick={() => handleDelete(pr.id)} className="p-1.5 text-red-600 hover:bg-red-100 rounded"><Trash2 className="h-4 w-4" /></button>
+                                            </div>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))}
                         </TableBody>

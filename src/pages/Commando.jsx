@@ -9,6 +9,9 @@ import { useData } from "@/context/DataContext"
 import { supabase } from "@/lib/supabase"
 import { parseDate } from "@/lib/dateUtils"
 import { exportToCSV } from "@/lib/export"
+import { SmartSearch } from "@/components/ui/SmartSearch"
+import { BulkEditModal } from "@/components/ui/BulkEditModal"
+import { UserPreferences } from "@/components/ui/UserPreferences"
 import { Search, Plus, X, Pencil, Trash2, Filter, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, RefreshCw, Download } from "lucide-react"
 
 const PAGE_SIZE = 50
@@ -45,6 +48,25 @@ export function Commando() {
     const [submitting, setSubmitting] = useState(false)
     const [importData, setImportData] = useState([])
     const [importing, setImporting] = useState(false)
+    const [showBulkEdit, setShowBulkEdit] = useState(false)
+    const [visibleColumns, setVisibleColumns] = useState(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem('commandoVisibleColumns'))
+            return saved || ["NO", "TANGGAL", "JUDUL KONTEN", "JENIS KONTEN", "MEDIA", "CREATOR", "LINK"]
+        } catch { return ["NO", "TANGGAL", "JUDUL KONTEN", "JENIS KONTEN", "MEDIA", "CREATOR", "LINK"] }
+    })
+
+    // Table columns config
+    const TABLE_COLUMNS = [
+        { key: "NO", label: "No" },
+        { key: "TANGGAL", label: "Tanggal" },
+        { key: "JUDUL KONTEN", label: "Judul Konten" },
+        { key: "JENIS KONTEN", label: "Jenis Konten" },
+        { key: "MEDIA", label: "Media" },
+        { key: "CREATOR", label: "Creator" },
+        { key: "AKTUALISASI", label: "Aktualisasi" },
+        { key: "LINK", label: "Link" }
+    ]
 
     // Memoized filter options
     const mediaOptions = useMemo(() => [...new Set(allData.map(c => c["MEDIA"]).filter(Boolean))], [allData])
@@ -185,6 +207,31 @@ export function Commando() {
         }))
         exportToCSV(dataToExport, 'commando_selected')
         toast.success(`${dataToExport.length} data berhasil diexport!`)
+    }
+
+    async function handleBulkEdit(fieldValues) {
+        try {
+            const updates = {}
+            Object.entries(fieldValues).forEach(([key, value]) => {
+                if (value) updates[key] = value
+            })
+
+            if (Object.keys(updates).length === 0) return
+
+            const { error } = await supabase
+                .from('commando_contents')
+                .update(updates)
+                .in('id', selectedIds)
+
+            if (error) throw error
+
+            toast.success(`${selectedIds.length} item berhasil diupdate!`)
+            setShowBulkEdit(false)
+            setSelectedIds([])
+            await refreshData()
+        } catch (error) {
+            toast.error("Gagal mengupdate: " + error.message)
+        }
     }
 
     function resetForm() {
@@ -345,9 +392,13 @@ export function Commando() {
                 <CardContent className="pt-6">
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <input ref={searchRef} type="text" placeholder="Cari judul atau caption... (Ctrl+F)" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-full h-10 pl-9 pr-4 rounded-lg bg-muted border-none text-sm" />
+                            <div className="flex-1">
+                                <SmartSearch
+                                    data={allData}
+                                    searchKeys={["JUDUL KONTEN", "HIGHLIGHT/CAPTIONS", "CREATOR", "MEDIA"]}
+                                    onSearch={(term) => { setSearchTerm(term); setCurrentPage(1); }}
+                                    placeholder="Smart search judul, caption, creator... (Ctrl+F)"
+                                />
                             </div>
                             <div className="flex items-center gap-2">
                                 <Filter className="h-4 w-4 text-muted-foreground" />
@@ -379,6 +430,7 @@ export function Commando() {
                     <CardContent className="py-3 flex items-center justify-between">
                         <span className="text-sm font-medium">{selectedIds.length} item dipilih</span>
                         <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setShowBulkEdit(true)}><Pencil className="h-4 w-4" />Edit Pilihan</Button>
                             <Button variant="outline" size="sm" onClick={handleExportSelected}><Download className="h-4 w-4" />Export Pilihan</Button>
                             <Button variant="destructive" size="sm" onClick={handleBulkDelete}><Trash2 className="h-4 w-4" />Hapus Pilihan</Button>
                             <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>Batal</Button>
@@ -387,40 +439,76 @@ export function Commando() {
                 </Card>
             )}
 
+            {/* Bulk Edit Modal */}
+            {showBulkEdit && (
+                <BulkEditModal
+                    selectedItems={allData.filter(c => selectedIds.includes(c.id))}
+                    editableFields={[
+                        { key: "JENIS KONTEN", label: "Jenis Konten", type: "select" },
+                        { key: "MEDIA", label: "Media", type: "select" },
+                        { key: "CREATOR", label: "Creator", type: "text" },
+                        { key: "AKTUALISASI", label: "Aktualisasi", type: "select" }
+                    ]}
+                    options={{
+                        "JENIS KONTEN": jenisOptions,
+                        "MEDIA": mediaOptions,
+                        "AKTUALISASI": ["Realisasi", "Plan"]
+                    }}
+                    onSave={handleBulkEdit}
+                    onClose={() => setShowBulkEdit(false)}
+                />
+            )}
+
             {/* Data Table */}
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between"><CardTitle className="text-base">Daftar Konten COMMANDO ({totalCount})</CardTitle><div className="text-sm text-muted-foreground">Hal. {currentPage}/{totalPages || 1}</div></CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-base">Daftar Konten COMMANDO ({totalCount})</CardTitle>
+                    <div className="flex items-center gap-3">
+                        <UserPreferences
+                            columns={TABLE_COLUMNS}
+                            onColumnChange={(cols) => {
+                                setVisibleColumns(cols)
+                                localStorage.setItem('commandoVisibleColumns', JSON.stringify(cols))
+                            }}
+                        />
+                        <div className="text-sm text-muted-foreground">Hal. {currentPage}/{totalPages || 1}</div>
+                    </div>
+                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[40px]"><button onClick={toggleSelectAll}>{selectedIds.length === contents.length && contents.length > 0 ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}</button></TableHead>
-                                <TableHead className="w-[50px] cursor-pointer" onClick={() => handleSort("created_at")}><div className="flex items-center">No {getSortIcon("created_at")}</div></TableHead>
-                                <TableHead className="w-[100px] cursor-pointer" onClick={() => handleSort("TANGGAL")}><div className="flex items-center">Tanggal {getSortIcon("TANGGAL")}</div></TableHead>
-                                <TableHead className="cursor-pointer" onClick={() => handleSort("JUDUL KONTEN")}><div className="flex items-center">Judul Konten {getSortIcon("JUDUL KONTEN")}</div></TableHead>
-                                <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort("JENIS KONTEN")}><div className="flex items-center">Jenis {getSortIcon("JENIS KONTEN")}</div></TableHead>
-                                <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort("MEDIA")}><div className="flex items-center">Media {getSortIcon("MEDIA")}</div></TableHead>
-                                <TableHead className="hidden lg:table-cell">Creator</TableHead>
-                                <TableHead className="w-[100px]">Aksi</TableHead>
+                                {visibleColumns.includes("NO") && <TableHead className="w-[50px] cursor-pointer" onClick={() => handleSort("created_at")}><div className="flex items-center">No {getSortIcon("created_at")}</div></TableHead>}
+                                {visibleColumns.includes("TANGGAL") && <TableHead className="w-[100px] cursor-pointer" onClick={() => handleSort("TANGGAL")}><div className="flex items-center">Tanggal {getSortIcon("TANGGAL")}</div></TableHead>}
+                                {visibleColumns.includes("JUDUL KONTEN") && <TableHead className="cursor-pointer" onClick={() => handleSort("JUDUL KONTEN")}><div className="flex items-center">Judul Konten {getSortIcon("JUDUL KONTEN")}</div></TableHead>}
+                                {visibleColumns.includes("JENIS KONTEN") && <TableHead className="cursor-pointer" onClick={() => handleSort("JENIS KONTEN")}><div className="flex items-center">Jenis {getSortIcon("JENIS KONTEN")}</div></TableHead>}
+                                {visibleColumns.includes("MEDIA") && <TableHead className="cursor-pointer" onClick={() => handleSort("MEDIA")}><div className="flex items-center">Media {getSortIcon("MEDIA")}</div></TableHead>}
+                                {visibleColumns.includes("CREATOR") && <TableHead>Creator</TableHead>}
+                                {visibleColumns.includes("AKTUALISASI") && <TableHead>Aktualisasi</TableHead>}
+                                {visibleColumns.includes("LINK") && <TableHead className="w-[100px]">Aksi</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {contents.map((item, index) => (
                                 <TableRow key={`${item.id}-${index}`} className={selectedIds.includes(item.id) ? "bg-primary/5" : ""}>
                                     <TableCell><button onClick={() => toggleSelect(item.id)}>{selectedIds.includes(item.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}</button></TableCell>
-                                    <TableCell className="font-medium text-muted-foreground">{(currentPage - 1) * PAGE_SIZE + index + 1}</TableCell>
-                                    <TableCell className="text-sm">{item["TANGGAL"] || "-"}</TableCell>
-                                    <TableCell className="max-w-[300px]"><span className="line-clamp-2">{item["JUDUL KONTEN"] || "-"}</span></TableCell>
-                                    <TableCell className="hidden md:table-cell"><span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary">{item["JENIS KONTEN"] || "-"}</span></TableCell>
-                                    <TableCell className="hidden md:table-cell text-sm">{item["MEDIA"] || "-"}</TableCell>
-                                    <TableCell className="hidden lg:table-cell text-sm">{item["CREATOR"] || "-"}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-1">
-                                            {item["LINK"] && <a href={item["LINK"]} target="_blank" rel="noopener noreferrer" className="p-1.5 text-primary hover:bg-primary/10 rounded"><ExternalLink className="h-4 w-4" /></a>}
-                                            <button onClick={() => handleEdit(item)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"><Pencil className="h-4 w-4" /></button>
-                                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-600 hover:bg-red-100 rounded"><Trash2 className="h-4 w-4" /></button>
-                                        </div>
-                                    </TableCell>
+                                    {visibleColumns.includes("NO") && <TableCell className="font-medium text-muted-foreground">{(currentPage - 1) * PAGE_SIZE + index + 1}</TableCell>}
+                                    {visibleColumns.includes("TANGGAL") && <TableCell className="text-sm">{item["TANGGAL"] || "-"}</TableCell>}
+                                    {visibleColumns.includes("JUDUL KONTEN") && <TableCell className="max-w-[300px]"><span className="line-clamp-2">{item["JUDUL KONTEN"] || "-"}</span></TableCell>}
+                                    {visibleColumns.includes("JENIS KONTEN") && <TableCell><span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary">{item["JENIS KONTEN"] || "-"}</span></TableCell>}
+                                    {visibleColumns.includes("MEDIA") && <TableCell className="text-sm">{item["MEDIA"] || "-"}</TableCell>}
+                                    {visibleColumns.includes("CREATOR") && <TableCell className="text-sm">{item["CREATOR"] || "-"}</TableCell>}
+                                    {visibleColumns.includes("AKTUALISASI") && <TableCell className="text-sm">{item["AKTUALISASI"] || "-"}</TableCell>}
+                                    {visibleColumns.includes("LINK") && (
+                                        <TableCell>
+                                            <div className="flex items-center gap-1">
+                                                {item["LINK"] && <a href={item["LINK"]} target="_blank" rel="noopener noreferrer" className="p-1.5 text-primary hover:bg-primary/10 rounded"><ExternalLink className="h-4 w-4" /></a>}
+                                                <button onClick={() => handleEdit(item)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"><Pencil className="h-4 w-4" /></button>
+                                                <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-600 hover:bg-red-100 rounded"><Trash2 className="h-4 w-4" /></button>
+                                            </div>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))}
                         </TableBody>

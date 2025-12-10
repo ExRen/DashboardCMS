@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table"
 import { useData } from "@/context/DataContext"
 import { TrendAnalysis } from "@/components/dashboard/TrendAnalysis"
+import { ActivityHeatmap } from "@/components/analytics/ActivityHeatmap"
+import { MediaPerformance } from "@/components/analytics/MediaPerformance"
+import { ReportGenerator } from "@/components/reports/ReportGenerator"
+import { BackupManager } from "@/components/ui/BackupManager"
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts"
 import { Filter, Trophy, Users, TrendingUp, TrendingDown, Medal, Award, Crown, Star, Zap, Target } from "lucide-react"
 
@@ -190,6 +194,12 @@ export function Analytics() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Activity Heatmap - Kalender Aktivitas */}
+            <ActivityHeatmap data={filteredCommando} dateField="TANGGAL" year={selectedYear ? parseInt(selectedYear) : new Date().getFullYear()} />
+
+            {/* Media Performance - Charts per Platform */}
+            <MediaPerformance data={filteredCommando} mediaField="MEDIA" />
 
             {/* Year Comparison - Only show when in compare mode */}
             {compareMode && (
@@ -396,6 +406,15 @@ export function Analytics() {
                         </div>
                     </CardContent>
                 </Card>
+            </div>
+
+            {/* Tools Section */}
+            <div className="grid gap-4 lg:grid-cols-2">
+                {/* Report Generator */}
+                <ReportGenerator />
+
+                {/* Backup Manager */}
+                <BackupManager />
             </div>
         </div>
     )

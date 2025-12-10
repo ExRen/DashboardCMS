@@ -3,6 +3,7 @@ import { Bell, Search, Moon, Sun, LogOut, User, History } from "lucide-react"
 import { useTheme } from "@/context/ThemeContext"
 import { useAuth } from "@/context/AuthContext"
 import { ActivityLog, ActivityLogButton, getActivities } from "@/components/ui/ActivityLog"
+import { NotificationBell } from "@/components/ui/NotificationBell"
 
 export function Header({ title }) {
     const { theme, toggleTheme } = useTheme()
@@ -28,6 +29,9 @@ export function Header({ title }) {
                         />
                     </div>
 
+                    {/* Notification Bell */}
+                    <NotificationBell />
+
                     {/* Activity Log */}
                     <ActivityLogButton
                         onClick={() => setShowActivityLog(true)}
@@ -47,11 +51,11 @@ export function Header({ title }) {
                         )}
                     </button>
 
-                    {/* Notifications */}
+                    {/* Notifications
                     <button className="relative p-2 rounded-lg hover:bg-accent transition-colors">
                         <Bell className="h-5 w-5 text-muted-foreground" />
                         <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full"></span>
-                    </button>
+                    </button> */}
 
                     {/* User Profile */}
                     <div className="flex items-center gap-3 pl-4 border-l border-border">
