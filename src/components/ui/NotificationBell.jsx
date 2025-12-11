@@ -10,6 +10,14 @@ export function NotificationBell() {
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState([])
     const [unreadCount, setUnreadCount] = useState(0)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+    // Listen for notification updates
+    useEffect(() => {
+        const handleNotificationUpdate = () => setRefreshTrigger(prev => prev + 1)
+        window.addEventListener('notificationUpdate', handleNotificationUpdate)
+        return () => window.removeEventListener('notificationUpdate', handleNotificationUpdate)
+    }, [])
 
     // Generate notifications based on data
     useEffect(() => {
@@ -102,7 +110,7 @@ export function NotificationBell() {
 
         setNotifications(newNotifications)
         setUnreadCount(newNotifications.filter(n => !n.read).length)
-    }, [commandoContents, pressReleases])
+    }, [commandoContents, pressReleases, refreshTrigger])
 
     // Mark notification as read
     function markAsRead(id) {

@@ -37,10 +37,37 @@ export function CommentsPanel({
             id: Date.now(),
             text: newComment.trim(),
             timestamp: new Date().toISOString(),
-            author: "User" // Could be from auth context
+            author: localStorage.getItem('userName') || "User"
         }
 
         saveComments([...comments, comment])
+
+        // Extract mentions and save notifications
+        const mentions = newComment.match(/@(\w+)/g) || []
+        if (mentions.length > 0) {
+            const existingNotifs = JSON.parse(localStorage.getItem('mentionNotifications') || '[]')
+
+            mentions.forEach(mention => {
+                const userName = mention.slice(1) // Remove @
+                existingNotifs.push({
+                    id: Date.now() + Math.random(),
+                    type: 'mention',
+                    to: userName,
+                    from: localStorage.getItem('userName') || 'User',
+                    text: newComment.trim(),
+                    contentId,
+                    contentType,
+                    createdAt: new Date().toISOString(),
+                    read: false
+                })
+            })
+
+            localStorage.setItem('mentionNotifications', JSON.stringify(existingNotifs))
+
+            // Dispatch event to refresh notifications
+            window.dispatchEvent(new CustomEvent('notificationUpdate'))
+        }
+
         setNewComment("")
     }
 
