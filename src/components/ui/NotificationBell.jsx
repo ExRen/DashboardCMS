@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { Bell, X, Clock, AlertCircle, CheckCircle, Info, Trash2, AtSign, UserPlus } from "lucide-react"
 import { useData } from "@/context/DataContext"
 
@@ -6,6 +7,7 @@ import { useData } from "@/context/DataContext"
  * NotificationBell - Notification dropdown with reminders and updates
  */
 export function NotificationBell() {
+    const navigate = useNavigate()
     const { commandoContents, pressReleases } = useData()
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState([])
@@ -85,7 +87,9 @@ export function NotificationBell() {
                 title: `@${m.to} di-mention`,
                 message: `${m.from}: "${m.text?.slice(0, 50)}..."`,
                 time: new Date(m.createdAt),
-                read: m.read
+                read: m.read,
+                contentId: m.contentId,
+                contentType: m.contentType
             })
         })
 
@@ -149,6 +153,19 @@ export function NotificationBell() {
         }
     }
 
+    // Handle notification click - navigate to item
+    function handleNotificationClick(notification) {
+        markAsRead(notification.id)
+        setIsOpen(false)
+
+        // Navigate based on content type
+        if (notification.contentType === 'commando') {
+            navigate('/commando')
+        } else if (notification.contentType === 'press') {
+            navigate('/siaran-pers')
+        }
+    }
+
     return (
         <div className="relative">
             {/* Bell Button */}
@@ -198,7 +215,7 @@ export function NotificationBell() {
                                 notifications.map(notification => (
                                     <div
                                         key={notification.id}
-                                        onClick={() => markAsRead(notification.id)}
+                                        onClick={() => handleNotificationClick(notification)}
                                         className={`p-3 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors ${!notification.read ? 'bg-primary/5' : ''
                                             }`}
                                     >
