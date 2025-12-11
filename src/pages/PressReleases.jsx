@@ -230,13 +230,16 @@ export function PressReleases() {
     async function handleSubmit(e) {
         e.preventDefault(); setSubmitting(true)
         try {
+            // Filter out fields that don't exist in database
+            const { ASSIGNED_TO, NOTES, ...dbFormData } = formData
+
             if (editingId) {
-                const { error } = await supabase.from('press_releases').update(formData).eq('id', editingId)
+                const { error } = await supabase.from('press_releases').update(dbFormData).eq('id', editingId)
                 if (error) throw error
                 logActivity('edit', 'Siaran Pers', formData["JUDUL SIARAN PERS"])
                 toast.success("Siaran pers berhasil diperbarui!")
             } else {
-                const { error } = await supabase.from('press_releases').insert([formData])
+                const { error } = await supabase.from('press_releases').insert([dbFormData])
                 if (error) throw error
                 logActivity('create', 'Siaran Pers', formData["JUDUL SIARAN PERS"])
                 toast.success("Siaran pers berhasil ditambahkan!")

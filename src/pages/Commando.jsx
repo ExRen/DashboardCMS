@@ -267,13 +267,16 @@ export function Commando() {
     async function handleSubmit(e) {
         e.preventDefault(); setSubmitting(true)
         try {
+            // Filter out fields that don't exist in database
+            const { ASSIGNED_TO, NOTES, ...dbFormData } = formData
+
             if (editingId) {
-                const { error } = await supabase.from('commando_contents').update(formData).eq('id', editingId)
+                const { error } = await supabase.from('commando_contents').update(dbFormData).eq('id', editingId)
                 if (error) throw error
                 logActivity('edit', 'Commando', formData["JUDUL KONTEN"])
                 toast.success("Konten berhasil diperbarui!")
             } else {
-                const { error } = await supabase.from('commando_contents').insert([formData])
+                const { error } = await supabase.from('commando_contents').insert([dbFormData])
                 if (error) throw error
                 logActivity('create', 'Commando', formData["JUDUL KONTEN"])
                 toast.success("Konten berhasil ditambahkan!")
