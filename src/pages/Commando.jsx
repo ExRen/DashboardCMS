@@ -55,12 +55,34 @@ export function Commando() {
     const [importing, setImporting] = useState(false)
     const [showBulkEdit, setShowBulkEdit] = useState(false)
     const [showComments, setShowComments] = useState(false)
+    const [highlightedItem, setHighlightedItem] = useState(null)
     const [visibleColumns, setVisibleColumns] = useState(() => {
         try {
             const saved = JSON.parse(localStorage.getItem('commandoVisibleColumns'))
             return saved || ["NO", "TANGGAL", "JUDUL KONTEN", "JENIS KONTEN", "MEDIA", "CREATOR", "LINK"]
         } catch { return ["NO", "TANGGAL", "JUDUL KONTEN", "JENIS KONTEN", "MEDIA", "CREATOR", "LINK"] }
     })
+
+    // Check for item to highlight from notifications
+    useEffect(() => {
+        const highlight = localStorage.getItem('highlightItem')
+        if (highlight) {
+            try {
+                const data = JSON.parse(highlight)
+                // Only process if it's for this page and within last 10 seconds
+                if (data.type === 'commando' && Date.now() - data.timestamp < 10000) {
+                    setHighlightedItem(data.id)
+                    localStorage.removeItem('highlightItem')
+                    // Clear highlight after 3 seconds
+                    setTimeout(() => setHighlightedItem(null), 3000)
+                } else {
+                    localStorage.removeItem('highlightItem')
+                }
+            } catch {
+                localStorage.removeItem('highlightItem')
+            }
+        }
+    }, [])
 
     // Table columns config
     const TABLE_COLUMNS = [

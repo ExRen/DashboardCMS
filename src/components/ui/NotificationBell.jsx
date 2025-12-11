@@ -155,9 +155,18 @@ export function NotificationBell({ onNavigate }) {
     function handleNotificationClick(notification) {
         markAsRead(notification.id)
         setIsOpen(false)
-        
+
         // Navigate based on content type using prop
         if (onNavigate && notification.contentType) {
+            // Store item to highlight in localStorage
+            if (notification.contentId) {
+                localStorage.setItem('highlightItem', JSON.stringify({
+                    id: notification.contentId,
+                    type: notification.contentType,
+                    timestamp: Date.now()
+                }))
+            }
+
             if (notification.contentType === 'commando') {
                 onNavigate('commando')
             } else if (notification.contentType === 'press') {

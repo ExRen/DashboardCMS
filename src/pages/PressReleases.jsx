@@ -322,7 +322,17 @@ export function PressReleases() {
             {showForm && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto">
-                        <CardHeader className="flex flex-row items-center justify-between"><CardTitle>{editingId ? "Edit Siaran Pers" : "Tambah Siaran Pers Baru"}</CardTitle><button onClick={() => { setShowForm(false); resetForm(); }}><X className="h-5 w-5" /></button></CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <CardTitle>{editingId ? "Edit Siaran Pers" : "Tambah Siaran Pers Baru"}</CardTitle>
+                                {!editingId && (
+                                    <ContentTemplates
+                                        onApply={(templateData) => setFormData(prev => ({ ...prev, ...templateData }))}
+                                    />
+                                )}
+                            </div>
+                            <button onClick={() => { setShowForm(false); resetForm(); }}><X className="h-5 w-5" /></button>
+                        </CardHeader>
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div><label className="text-sm font-medium">Judul Siaran Pers *</label><textarea required value={formData["JUDUL SIARAN PERS"]} onChange={(e) => setFormData({ ...formData, "JUDUL SIARAN PERS": e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg bg-muted border border-border text-sm" rows={2} /></div>

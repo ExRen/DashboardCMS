@@ -11,9 +11,9 @@ const TEMPLATES = [
         icon: '🏢',
         description: 'Template untuk berita perusahaan umum',
         data: {
-            "KATEGORI": "Corporate News",
-            "JENIS": "Press Release",
-            "HIGHLIGHT/CAPTIONS": "ASABRI [JUDUL BERITA]\n\n[LOKASI], [TANGGAL] - [Paragraf pembuka dengan informasi utama]\n\n[Paragraf detail]\n\n\"[Kutipan pejabat],\" ujar [Nama Pejabat], [Jabatan].\n\n[Paragraf penutup]\n\n---\nNarahubung:\n[Nama]\n[Jabatan]\n[Email/Telepon]",
+            "KETEGORI": "Corporate Action",
+            "JENIS RILIS": "Rilis Pusat",
+            "JUDUL SIARAN PERS": "ASABRI [JUDUL BERITA]",
         }
     },
     {
@@ -22,9 +22,9 @@ const TEMPLATES = [
         icon: '📅',
         description: 'Template untuk liputan event atau kegiatan',
         data: {
-            "KATEGORI": "Event Coverage",
-            "JENIS": "Press Release",
-            "HIGHLIGHT/CAPTIONS": "ASABRI Gelar [NAMA KEGIATAN]\n\n[LOKASI], [TANGGAL] - PT ASABRI (Persero) menyelenggarakan [nama kegiatan] yang berlangsung di [lokasi] pada [tanggal].\n\nKegiatan ini dihadiri oleh [daftar hadir penting].\n\n[Detail kegiatan]\n\n\"[Kutipan],\" kata [Nama], [Jabatan].\n\n[Penutup]",
+            "KETEGORI": "Event Coverage",
+            "JENIS RILIS": "Rilis Pusat",
+            "JUDUL SIARAN PERS": "ASABRI Gelar [NAMA KEGIATAN]",
         }
     },
     {
@@ -33,9 +33,9 @@ const TEMPLATES = [
         icon: '🏆',
         description: 'Template untuk berita penghargaan',
         data: {
-            "KATEGORI": "Achievement",
-            "JENIS": "Press Release",
-            "HIGHLIGHT/CAPTIONS": "ASABRI Raih [NAMA PENGHARGAAN]\n\n[LOKASI], [TANGGAL] - PT ASABRI (Persero) kembali menorehkan prestasi dengan meraih [nama penghargaan] dari [pemberi penghargaan].\n\nPenghargaan diserahkan oleh [nama penyerah], [jabatan] kepada [nama penerima], [jabatan] dalam acara [nama acara] di [lokasi].\n\n\"[Kutipan],\" ungkap [Nama], [Jabatan].\n\n[Paragraf tentang pencapaian/kontribusi]",
+            "KETEGORI": "Achievement",
+            "JENIS RILIS": "Rilis Pusat",
+            "JUDUL SIARAN PERS": "ASABRI Raih [NAMA PENGHARGAAN]",
         }
     },
     {
@@ -44,9 +44,9 @@ const TEMPLATES = [
         icon: '💚',
         description: 'Template untuk kegiatan tanggung jawab sosial',
         data: {
-            "KATEGORI": "CSR",
-            "JENIS": "Press Release",
-            "HIGHLIGHT/CAPTIONS": "ASABRI Salurkan Bantuan [JENIS BANTUAN] untuk [PENERIMA]\n\n[LOKASI], [TANGGAL] - Sebagai wujud kepedulian sosial, PT ASABRI (Persero) menyalurkan bantuan [jenis bantuan] kepada [penerima] di [lokasi].\n\n[Detail penyaluran]\n\n\"[Kutipan tentang komitmen CSR],\" kata [Nama], [Jabatan].\n\n[Paragraf penutup tentang program CSR ASABRI]",
+            "KETEGORI": "CSR",
+            "JENIS RILIS": "Rilis Pusat",
+            "JUDUL SIARAN PERS": "ASABRI Salurkan Bantuan [JENIS BANTUAN] untuk [PENERIMA]",
         }
     },
     {
@@ -55,9 +55,9 @@ const TEMPLATES = [
         icon: '🤝',
         description: 'Template untuk pengumuman kerjasama',
         data: {
-            "KATEGORI": "Partnership",
-            "JENIS": "Press Release",
-            "HIGHLIGHT/CAPTIONS": "ASABRI Jalin Kerjasama dengan [MITRA]\n\n[LOKASI], [TANGGAL] - PT ASABRI (Persero) menandatangani perjanjian kerjasama dengan [nama mitra] dalam bidang [bidang kerjasama].\n\nPenandatanganan dilakukan oleh [nama ASABRI], [jabatan] dan [nama mitra], [jabatan mitra] di [lokasi].\n\nKerjasama ini meliputi:\n• [Poin 1]\n• [Poin 2]\n• [Poin 3]\n\n\"[Kutipan],\" jelas [Nama], [Jabatan].",
+            "KETEGORI": "Partnership",
+            "JENIS RILIS": "Rilis Pusat",
+            "JUDUL SIARAN PERS": "ASABRI Jalin Kerjasama dengan [MITRA]",
         }
     },
     {
@@ -66,9 +66,9 @@ const TEMPLATES = [
         icon: '🚀',
         description: 'Template untuk peluncuran layanan/produk baru',
         data: {
-            "KATEGORI": "Product Launch",
-            "JENIS": "Press Release",
-            "HIGHLIGHT/CAPTIONS": "ASABRI Luncurkan [NAMA LAYANAN]\n\n[LOKASI], [TANGGAL] - PT ASABRI (Persero) resmi meluncurkan [nama layanan], sebuah [deskripsi singkat] untuk meningkatkan [manfaat].\n\nPeluncuran dilakukan oleh [nama], [jabatan] di [lokasi].\n\nFitur utama [nama layanan]:\n• [Fitur 1]\n• [Fitur 2]\n• [Fitur 3]\n\n\"[Kutipan tentang inovasi],\" ujar [Nama], [Jabatan].\n\n[Cara akses/informasi lebih lanjut]",
+            "KETEGORI": "Product Launch",
+            "JENIS RILIS": "Rilis Pusat",
+            "JUDUL SIARAN PERS": "ASABRI Luncurkan [NAMA LAYANAN]",
         }
     },
 ]
@@ -120,8 +120,8 @@ export function ContentTemplates({ onApply }) {
                                     type="button"
                                     onClick={() => handleSelect(template)}
                                     className={`w-full text-left p-3 rounded-lg flex items-start gap-3 transition-colors ${selectedTemplate?.id === template.id
-                                            ? 'bg-primary/10 border border-primary/30'
-                                            : 'hover:bg-muted'
+                                        ? 'bg-primary/10 border border-primary/30'
+                                        : 'hover:bg-muted'
                                         }`}
                                 >
                                     <span className="text-2xl">{template.icon}</span>
@@ -142,7 +142,7 @@ export function ContentTemplates({ onApply }) {
                             <div className="p-3 border-t border-border bg-muted/30">
                                 <div className="text-xs text-muted-foreground mb-2">Preview:</div>
                                 <div className="bg-background p-2 rounded text-xs max-h-[100px] overflow-auto whitespace-pre-wrap font-mono">
-                                    {selectedTemplate.data["HIGHLIGHT/CAPTIONS"].slice(0, 200)}...
+                                    {selectedTemplate.data["JUDUL SIARAN PERS"]}
                                 </div>
                                 <button
                                     type="button"
