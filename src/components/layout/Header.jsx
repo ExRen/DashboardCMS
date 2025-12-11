@@ -6,7 +6,7 @@ import { ActivityLog, ActivityLogButton, getActivities } from "@/components/ui/A
 import { NotificationBell } from "@/components/ui/NotificationBell"
 import { KeyboardShortcutsModal, useKeyboardShortcuts } from "@/components/ui/KeyboardShortcutsModal"
 
-export function Header({ title }) {
+export function Header({ title, onNavigate }) {
     const { theme, toggleTheme } = useTheme()
     const { profile, logout } = useAuth()
     const [showActivityLog, setShowActivityLog] = useState(false)
@@ -44,7 +44,7 @@ export function Header({ title }) {
                     </button>
 
                     {/* Notification Bell */}
-                    <NotificationBell />
+                    <NotificationBell onNavigate={onNavigate} />
 
                     {/* Activity Log */}
                     <ActivityLogButton

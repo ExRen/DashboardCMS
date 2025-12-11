@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import { Bell, X, Clock, AlertCircle, CheckCircle, Info, Trash2, AtSign, UserPlus } from "lucide-react"
 import { useData } from "@/context/DataContext"
 
 /**
  * NotificationBell - Notification dropdown with reminders and updates
  */
-export function NotificationBell() {
-    const navigate = useNavigate()
+export function NotificationBell({ onNavigate }) {
     const { commandoContents, pressReleases } = useData()
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState([])
@@ -157,12 +155,14 @@ export function NotificationBell() {
     function handleNotificationClick(notification) {
         markAsRead(notification.id)
         setIsOpen(false)
-
-        // Navigate based on content type
-        if (notification.contentType === 'commando') {
-            navigate('/commando')
-        } else if (notification.contentType === 'press') {
-            navigate('/siaran-pers')
+        
+        // Navigate based on content type using prop
+        if (onNavigate && notification.contentType) {
+            if (notification.contentType === 'commando') {
+                onNavigate('commando')
+            } else if (notification.contentType === 'press') {
+                onNavigate('press-releases')
+            }
         }
     }
 

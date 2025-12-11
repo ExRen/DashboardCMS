@@ -83,7 +83,7 @@ function AppContent() {
       <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title={pageTitles[currentPage]} />
+        <Header title={pageTitles[currentPage]} onNavigate={setCurrentPage} />
 
         <main className="flex-1 overflow-auto p-6">
           <Suspense fallback={<PageLoader />}>
