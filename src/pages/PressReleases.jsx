@@ -14,7 +14,8 @@ import { MentionInput } from "@/components/ui/MentionInput"
 import { AssignmentDropdown } from "@/components/ui/AssignmentDropdown"
 import { ContentTemplates } from "@/components/ui/ContentTemplates"
 import { logActivity } from "@/components/ui/ActivityLog"
-import { ExternalLink, Filter, Search, Plus, X, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard } from "lucide-react"
+import { CommentsPanel, getCommentCount } from "@/components/ui/CommentsPanel"
+import { ExternalLink, Filter, Search, Plus, X, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, MessageSquare } from "lucide-react"
 
 const PAGE_SIZE = 50
 const INITIAL_FORM = {
@@ -52,6 +53,7 @@ export function PressReleases() {
     const [submitting, setSubmitting] = useState(false)
     const [importData, setImportData] = useState([])
     const [importing, setImporting] = useState(false)
+    const [showComments, setShowComments] = useState(false)
     const [visibleColumns, setVisibleColumns] = useState(() => {
         try {
             const saved = JSON.parse(localStorage.getItem('pressVisibleColumns'))
@@ -374,12 +376,34 @@ export function PressReleases() {
                                     </div>
                                 </div>
 
+                                {/* Comments Button - only for editing */}
+                                {editingId && (
+                                    <div className="pt-2 border-t border-border">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowComments(true)}
+                                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                                        >
+                                            <MessageSquare className="h-4 w-4" />
+                                            Lihat Komentar ({getCommentCount(editingId, 'press')})
+                                        </button>
+                                    </div>
+                                )}
+
                                 <div className="flex gap-3 pt-2"><Button type="button" variant="outline" onClick={() => { setShowForm(false); resetForm(); }} className="flex-1">Batal</Button><Button type="submit" disabled={submitting} className="flex-1">{submitting ? "Menyimpan..." : (editingId ? "Update" : "Simpan")}</Button></div>
                             </form>
                         </CardContent>
                     </Card>
                 </div>
             )}
+
+            {/* Comments Panel */}
+            <CommentsPanel
+                contentId={editingId}
+                contentType="press"
+                isOpen={showComments}
+                onClose={() => setShowComments(false)}
+            />
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-4">
