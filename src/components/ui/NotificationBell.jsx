@@ -30,16 +30,16 @@ export function NotificationBell() {
             !c.status || c.status === 'Draft'
         ).slice(0, 3)
 
-        draftItems.forEach(item => {
-            newNotifications.push({
-                id: `draft-${item.id}`,
-                type: 'warning',
-                title: 'Konten Draft',
-                message: `"${(item["JUDUL KONTEN"] || "").slice(0, 30)}..." masih draft`,
-                time: new Date(),
-                read: false
-            })
-        })
+        // draftItems.forEach(item => {
+        //     newNotifications.push({
+        //         id: `draft-${item.id}`,
+        //         type: 'warning',
+        //         title: 'Konten Draft',
+        //         message: `"${(item["JUDUL KONTEN"] || "").slice(0, 30)}..." masih draft`,
+        //         time: new Date(),
+        //         read: false
+        //     })
+        // })
 
         // Check for items created today
         const todayItems = commandoContents.filter(c => {
