@@ -9,6 +9,7 @@ import { useData } from "@/context/DataContext"
 import { supabase } from "@/lib/supabase"
 import { parseDate } from "@/lib/dateUtils"
 import { exportToCSV } from "@/lib/export"
+import { copyTableData } from "@/lib/clipboard"
 import { SmartSearch } from "@/components/ui/SmartSearch"
 import { BulkEditModal } from "@/components/ui/BulkEditModal"
 import { UserPreferences } from "@/components/ui/UserPreferences"
@@ -16,7 +17,7 @@ import { MentionInput } from "@/components/ui/MentionInput"
 import { AssignmentDropdown } from "@/components/ui/AssignmentDropdown"
 import { CommentsPanel, CommentButton, getCommentCount } from "@/components/ui/CommentsPanel"
 import { logActivity } from "@/components/ui/ActivityLog"
-import { Search, Plus, X, Pencil, Trash2, Filter, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, RefreshCw, Download, MessageSquare } from "lucide-react"
+import { Search, Plus, X, Pencil, Trash2, Filter, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, RefreshCw, Download, MessageSquare, Copy, Printer } from "lucide-react"
 
 const PAGE_SIZE = 50
 const INITIAL_FORM = {
@@ -259,6 +260,20 @@ export function Commando() {
         }))
         exportToCSV(dataToExport, 'commando_selected')
         toast.success(`${dataToExport.length} data berhasil diexport!`)
+    }
+
+    async function handleCopySelected() {
+        const dataToCopy = allData.filter(c => selectedIds.includes(c.id)).map(c => ({
+            "No": c["NO"], "Tanggal": c["TANGGAL"], "Judul": c["JUDUL KONTEN"],
+            "Jenis": c["JENIS KONTEN"], "Media": c["MEDIA"], "Creator": c["CREATOR"]
+        }))
+        const success = await copyTableData(dataToCopy)
+        if (success) toast.success(`${dataToCopy.length} data disalin ke clipboard!`)
+        else toast.error("Gagal menyalin data")
+    }
+
+    function handlePrint() {
+        window.print()
     }
 
     async function handleBulkEdit(fieldValues) {
@@ -530,7 +545,8 @@ export function Commando() {
                         <span className="text-sm font-medium">{selectedIds.length} item dipilih</span>
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" onClick={() => setShowBulkEdit(true)}><Pencil className="h-4 w-4" />Edit Pilihan</Button>
-                            <Button variant="outline" size="sm" onClick={handleExportSelected}><Download className="h-4 w-4" />Export Pilihan</Button>
+                            <Button variant="outline" size="sm" onClick={handleCopySelected}><Copy className="h-4 w-4" />Copy</Button>
+                            <Button variant="outline" size="sm" onClick={handleExportSelected}><Download className="h-4 w-4" />Export</Button>
                             <Button variant="destructive" size="sm" onClick={handleBulkDelete}><Trash2 className="h-4 w-4" />Hapus Pilihan</Button>
                             <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>Batal</Button>
                         </div>

@@ -20,12 +20,14 @@ const SHORTCUTS = [
             { keys: ['Ctrl', 'N'], description: 'Tambah item baru' },
             { keys: ['Ctrl', 'E'], description: 'Export data' },
             { keys: ['Ctrl', 'R'], description: 'Refresh data' },
+            { keys: ['Ctrl', 'P'], description: 'Print halaman ini' },
             { keys: ['Escape'], description: 'Tutup modal / Batal' },
         ]
     },
     {
         category: 'Bulk Actions', shortcuts: [
             { keys: ['Ctrl', 'A'], description: 'Pilih semua' },
+            { keys: ['Ctrl', 'Shift', 'C'], description: 'Copy data terpilih' },
             { keys: ['Delete'], description: 'Hapus item terpilih' },
         ]
     },
@@ -34,6 +36,7 @@ const SHORTCUTS = [
             { keys: ['?'], description: 'Tampilkan shortcut ini' },
             { keys: ['Ctrl', '/'], description: 'Tampilkan shortcut ini' },
             { keys: ['Ctrl', 'S'], description: 'Simpan perubahan' },
+            { keys: ['Ctrl', 'Shift', 'D'], description: 'Toggle dark mode' },
         ]
     },
 ]

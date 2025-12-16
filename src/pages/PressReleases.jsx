@@ -9,6 +9,7 @@ import { useData } from "@/context/DataContext"
 import { supabase } from "@/lib/supabase"
 import { parseDate } from "@/lib/dateUtils"
 import { exportToCSV } from "@/lib/export"
+import { copyTableData } from "@/lib/clipboard"
 import { SmartSearch } from "@/components/ui/SmartSearch"
 import { UserPreferences } from "@/components/ui/UserPreferences"
 import { MentionInput } from "@/components/ui/MentionInput"
@@ -16,7 +17,7 @@ import { AssignmentDropdown } from "@/components/ui/AssignmentDropdown"
 import { ContentTemplates } from "@/components/ui/ContentTemplates"
 import { logActivity } from "@/components/ui/ActivityLog"
 import { CommentsPanel, getCommentCount } from "@/components/ui/CommentsPanel"
-import { ExternalLink, Filter, Search, Plus, X, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, MessageSquare, Download } from "lucide-react"
+import { ExternalLink, Filter, Search, Plus, X, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, MessageSquare, Download, Copy, Printer } from "lucide-react"
 
 const PAGE_SIZE = 50
 const INITIAL_FORM = {
@@ -229,6 +230,20 @@ export function PressReleases() {
         }))
         exportToCSV(dataToExport, 'siaran_pers_selected')
         toast.success(`${dataToExport.length} data berhasil diexport!`)
+    }
+
+    async function handleCopySelected() {
+        const dataToCopy = allData.filter(p => selectedIds.includes(p.id)).map(p => ({
+            "No": p["NO"], "Tanggal": p["TANGGAL TERBIT"], "Nomor SP": p["NOMOR SIARAN PERS"],
+            "Judul": p["JUDUL SIARAN PERS"], "Jenis": p["JENIS RILIS"], "Writer": p["WRITER CORCOMM"]
+        }))
+        const success = await copyTableData(dataToCopy)
+        if (success) toast.success(`${dataToCopy.length} data disalin ke clipboard!`)
+        else toast.error("Gagal menyalin data")
+    }
+
+    function handlePrint() {
+        window.print()
     }
 
     function resetForm() {
@@ -493,7 +508,8 @@ export function PressReleases() {
                     <CardContent className="py-3 flex items-center justify-between">
                         <span className="text-sm font-medium">{selectedIds.length} item dipilih</span>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={handleExportSelected}><Download className="h-4 w-4" />Export Pilihan</Button>
+                            <Button variant="outline" size="sm" onClick={handleCopySelected}><Copy className="h-4 w-4" />Copy</Button>
+                            <Button variant="outline" size="sm" onClick={handleExportSelected}><Download className="h-4 w-4" />Export</Button>
                             <Button variant="destructive" size="sm" onClick={handleBulkDelete}><Trash2 className="h-4 w-4" />Hapus Pilihan</Button>
                             <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>Batal</Button>
                         </div>
