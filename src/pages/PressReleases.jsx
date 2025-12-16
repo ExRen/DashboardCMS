@@ -80,6 +80,30 @@ export function PressReleases() {
     const lingkupOptions = useMemo(() => [...new Set(allData.map(p => p["LINGKUP"]).filter(Boolean))], [allData])
     const yearOptions = useMemo(() => [...new Set(allData.map(p => p.year).filter(Boolean))].sort((a, b) => b - a), [allData])
 
+    // Memoized filtered data for select all functionality
+    const filteredData = useMemo(() => {
+        let filtered = [...allData]
+        if (selectedJenis) filtered = filtered.filter(p => p["JENIS RILIS"] === selectedJenis)
+        if (selectedYear) filtered = filtered.filter(p => p.year === parseInt(selectedYear))
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase()
+            filtered = filtered.filter(p => p["JUDUL SIARAN PERS"]?.toLowerCase().includes(term) || p["NOMOR SIARAN PERS"]?.toLowerCase().includes(term))
+        }
+        if (dateFrom || dateTo) {
+            filtered = filtered.filter(p => {
+                const date = parseDate(p["TANGGAL TERBIT"])
+                if (!date) return false
+                const fromDate = dateFrom ? new Date(dateFrom) : null
+                const toDate = dateTo ? new Date(dateTo) : null
+                if (toDate) toDate.setHours(23, 59, 59, 999)
+                if (fromDate && date < fromDate) return false
+                if (toDate && date > toDate) return false
+                return true
+            })
+        }
+        return filtered
+    }, [allData, selectedJenis, selectedYear, searchTerm, dateFrom, dateTo])
+
     // Use cached data from context
     useEffect(() => {
         if (cachedPress.length > 0) {
@@ -172,8 +196,10 @@ export function PressReleases() {
     }
 
     function toggleSelectAll() {
-        if (selectedIds.length === pressReleases.length) setSelectedIds([])
-        else setSelectedIds(pressReleases.map(p => p.id))
+        // Select all filtered data, not just current page
+        const allFilteredIds = filteredData.map(p => p.id)
+        if (selectedIds.length === allFilteredIds.length) setSelectedIds([])
+        else setSelectedIds(allFilteredIds)
     }
 
     function toggleSelect(id) {

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { useData } from "@/context/DataContext"
@@ -8,7 +8,7 @@ import { FileText, Download, Calendar, Filter, Eye, Printer } from "lucide-react
  * ReportGenerator - Custom report builder with branded PDF export
  */
 export function ReportGenerator() {
-    const { commandoContents, pressReleases } = useData()
+    const { commandoContents, pressReleases, fetchAll, loading } = useData()
     const [dataSource, setDataSource] = useState("commando")
     const [dateFrom, setDateFrom] = useState("")
     const [dateTo, setDateTo] = useState("")
@@ -16,6 +16,13 @@ export function ReportGenerator() {
     const [selectedCreator, setSelectedCreator] = useState("")
     const [reportTitle, setReportTitle] = useState("Laporan Konten")
     const [showPreview, setShowPreview] = useState(false)
+
+    // Ensure data is loaded when component mounts
+    useEffect(() => {
+        if (pressReleases.length === 0 || commandoContents.length === 0) {
+            fetchAll()
+        }
+    }, [])
 
     // Get data based on source
     const sourceData = dataSource === "commando" ? commandoContents : pressReleases

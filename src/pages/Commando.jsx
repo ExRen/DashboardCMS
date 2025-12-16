@@ -203,8 +203,31 @@ export function Commando() {
     }
 
     function toggleSelectAll() {
-        if (selectedIds.length === contents.length) setSelectedIds([])
-        else setSelectedIds(contents.map(c => c.id))
+        // Select all filtered data, not just current page
+        // Get all filtered IDs by recomputing the filter (we have filteredCount from useMemo)
+        let allFiltered = [...allData]
+        if (selectedYear) allFiltered = allFiltered.filter(c => c.year === parseInt(selectedYear))
+        if (selectedMedia) allFiltered = allFiltered.filter(c => c["MEDIA"] === selectedMedia)
+        if (selectedJenis) allFiltered = allFiltered.filter(c => c["JENIS KONTEN"] === selectedJenis)
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase()
+            allFiltered = allFiltered.filter(c => c["JUDUL KONTEN"]?.toLowerCase().includes(term) || c["HIGHLIGHT/CAPTIONS"]?.toLowerCase().includes(term))
+        }
+        if (dateFrom || dateTo) {
+            allFiltered = allFiltered.filter(c => {
+                const date = parseDate(c["TANGGAL"])
+                if (!date) return false
+                const fromDate = dateFrom ? new Date(dateFrom) : null
+                const toDate = dateTo ? new Date(dateTo) : null
+                if (toDate) toDate.setHours(23, 59, 59, 999)
+                if (fromDate && date < fromDate) return false
+                if (toDate && date > toDate) return false
+                return true
+            })
+        }
+        const allFilteredIds = allFiltered.map(c => c.id)
+        if (selectedIds.length === allFilteredIds.length) setSelectedIds([])
+        else setSelectedIds(allFilteredIds)
     }
 
     function toggleSelect(id) {
