@@ -15,7 +15,7 @@ import { AssignmentDropdown } from "@/components/ui/AssignmentDropdown"
 import { ContentTemplates } from "@/components/ui/ContentTemplates"
 import { logActivity } from "@/components/ui/ActivityLog"
 import { CommentsPanel, getCommentCount } from "@/components/ui/CommentsPanel"
-import { ExternalLink, Filter, Search, Plus, X, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, MessageSquare } from "lucide-react"
+import { ExternalLink, Filter, Search, Plus, X, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, MessageSquare, Download } from "lucide-react"
 
 const PAGE_SIZE = 50
 const INITIAL_FORM = {
