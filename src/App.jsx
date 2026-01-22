@@ -16,6 +16,9 @@ const Pipeline = lazy(() => import("@/pages/Pipeline").then(m => ({ default: m.P
 const CalendarPage = lazy(() => import("@/pages/Calendar").then(m => ({ default: m.CalendarPage })))
 const Analytics = lazy(() => import("@/pages/Analytics").then(m => ({ default: m.Analytics })))
 const Settings = lazy(() => import("@/pages/Settings").then(m => ({ default: m.Settings })))
+const MasterData = lazy(() => import("@/pages/MasterData").then(m => ({ default: m.MasterData })))
+const UserManagement = lazy(() => import("@/pages/UserManagement").then(m => ({ default: m.UserManagement })))
+const MediaLibrary = lazy(() => import("@/pages/MediaLibrary").then(m => ({ default: m.MediaLibrary })))
 
 const pageTitles = {
   "dashboard": "Dashboard Overview",
@@ -24,6 +27,9 @@ const pageTitles = {
   "pipeline": "Content Pipeline",
   "calendar": "Kalender Publikasi",
   "analytics": "Analytics & Reports",
+  "media": "Media Library",
+  "master-data": "Master Data",
+  "users": "User Management",
   "settings": "Settings"
 }
 
@@ -71,6 +77,12 @@ function AppContent() {
         return <CalendarPage />
       case "analytics":
         return <Analytics />
+      case "media":
+        return <MediaLibrary />
+      case "master-data":
+        return <MasterData />
+      case "users":
+        return <UserManagement />
       case "settings":
         return <Settings />
       default:

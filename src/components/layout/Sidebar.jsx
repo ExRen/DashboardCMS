@@ -7,7 +7,11 @@ import {
     ChevronRight,
     Megaphone,
     Calendar,
-    Kanban
+    Kanban,
+    Database,
+    Users,
+    Settings,
+    Image
 } from "lucide-react"
 import { useState } from "react"
 
@@ -18,7 +22,13 @@ const menuItems = [
     { icon: Kanban, label: "Pipeline", id: "pipeline" },
     { icon: Calendar, label: "Kalender", id: "calendar" },
     { icon: BarChart3, label: "Analytics", id: "analytics" },
+    { icon: Image, label: "Media Library", id: "media" },
+    { icon: Database, label: "Master Data", id: "master-data" },
+    { icon: Users, label: "Users", id: "users", adminOnly: true },
+    { icon: Settings, label: "Settings", id: "settings" },
 ]
+
+
 
 export function Sidebar({ currentPage, onNavigate }) {
     const [collapsed, setCollapsed] = useState(false)

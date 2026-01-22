@@ -1,27 +1,54 @@
 import { useState } from "react"
 import { useAuth } from "@/context/AuthContext"
-import { Lock, Mail, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { Lock, Mail, Eye, EyeOff, AlertCircle, User, CheckCircle } from "lucide-react"
 
 export function Login() {
-    const { login } = useAuth()
+    const { login, register } = useAuth()
+    const [isRegister, setIsRegister] = useState(false)
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [fullName, setFullName] = useState("")
     const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState("")
+    const [success, setSuccess] = useState("")
     const [loading, setLoading] = useState(false)
 
     async function handleSubmit(e) {
         e.preventDefault()
         setError("")
+        setSuccess("")
         setLoading(true)
 
-        const result = await login(email, password)
-
-        if (!result.success) {
-            setError(result.error || "Login gagal")
+        if (isRegister) {
+            // Register
+            if (password.length < 6) {
+                setError("Password minimal 6 karakter")
+                setLoading(false)
+                return
+            }
+            const result = await register(email, password, fullName)
+            if (result.success) {
+                setSuccess(result.message)
+                setIsRegister(false)
+                setPassword("")
+            } else {
+                setError(result.error || "Registrasi gagal")
+            }
+        } else {
+            // Login
+            const result = await login(email, password)
+            if (!result.success) {
+                setError(result.error || "Login gagal")
+            }
         }
 
         setLoading(false)
+    }
+
+    function toggleMode() {
+        setIsRegister(!isRegister)
+        setError("")
+        setSuccess("")
     }
 
     return (
@@ -33,17 +60,71 @@ export function Login() {
                         <span className="text-2xl font-bold text-primary">A</span>
                     </div>
                     <h1 className="text-2xl font-bold text-foreground">ASABRI CMS</h1>
-                    <p className="text-muted-foreground mt-2">Masuk ke dashboard</p>
+                    <p className="text-muted-foreground mt-2">
+                        {isRegister ? "Daftar akun baru" : "Masuk ke dashboard"}
+                    </p>
                 </div>
 
-                {/* Login Card */}
+                {/* Login/Register Card */}
                 <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Tab Switcher */}
+                    <div className="flex mb-6 bg-muted rounded-lg p-1">
+                        <button
+                            type="button"
+                            onClick={() => { setIsRegister(false); setError(""); setSuccess(""); }}
+                            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${!isRegister
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                                }`}
+                        >
+                            Masuk
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => { setIsRegister(true); setError(""); setSuccess(""); }}
+                            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${isRegister
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                                }`}
+                        >
+                            Daftar
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        {/* Success Message */}
+                        {success && (
+                            <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 text-green-600 text-sm">
+                                <CheckCircle className="h-4 w-4 shrink-0" />
+                                <span>{success}</span>
+                            </div>
+                        )}
+
                         {/* Error Message */}
                         {error && (
                             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
                                 <AlertCircle className="h-4 w-4 shrink-0" />
                                 <span>{error}</span>
+                            </div>
+                        )}
+
+                        {/* Full Name Field (Register only) */}
+                        {isRegister && (
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-2">
+                                    Nama Lengkap
+                                </label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <input
+                                        type="text"
+                                        required
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        placeholder="Nama lengkap Anda"
+                                        className="w-full h-12 pl-10 pr-4 rounded-lg bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                    />
+                                </div>
                             </div>
                         )}
 
@@ -59,7 +140,7 @@ export function Login() {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="admin@asabri.co.id"
+                                    placeholder="email@asabri.co.id"
                                     className="w-full h-12 pl-10 pr-4 rounded-lg bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                 />
                             </div>
@@ -77,7 +158,7 @@ export function Login() {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
+                                    placeholder={isRegister ? "Minimal 6 karakter" : "••••••••"}
                                     className="w-full h-12 pl-10 pr-12 rounded-lg bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                 />
                                 <button
@@ -102,12 +183,19 @@ export function Login() {
                                     Memproses...
                                 </span>
                             ) : (
-                                "Masuk"
+                                isRegister ? "Daftar" : "Masuk"
                             )}
                         </button>
                     </form>
 
-
+                    {/* Legacy Login Info */}
+                    {!isRegister && (
+                        <div className="mt-4 p-3 rounded-lg bg-muted text-xs text-muted-foreground">
+                            <p className="font-medium mb-1">Akun Demo:</p>
+                            <p>Email: admin@asabri.co.id</p>
+                            <p>Password: admin123</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}

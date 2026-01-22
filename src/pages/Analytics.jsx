@@ -7,7 +7,7 @@ import { ActivityHeatmap } from "@/components/analytics/ActivityHeatmap"
 import { MediaPerformance } from "@/components/analytics/MediaPerformance"
 import { PressReleaseAnalytics } from "@/components/analytics/PressReleaseAnalytics"
 import { SocialMediaAnalytics } from "@/components/analytics/SocialMediaAnalytics"
-import { ReportGenerator } from "@/components/reports/ReportGenerator"
+import { MonthlyReportGenerator } from "@/components/ui/MonthlyReportGenerator"
 import { BackupManager } from "@/components/ui/BackupManager"
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts"
 import { Filter, Trophy, Users, TrendingUp, TrendingDown, Medal, Award, Crown, Star, Zap, Target, LayoutGrid, FileText, Share2 } from "lucide-react"
@@ -151,8 +151,8 @@ export function Analytics() {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === tab.id
-                                            ? "bg-background text-foreground shadow-sm"
-                                            : "text-muted-foreground hover:text-foreground"
+                                        ? "bg-background text-foreground shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground"
                                         }`}
                                 >
                                     <tab.icon className="h-4 w-4" />
@@ -453,11 +453,16 @@ export function Analytics() {
 
                     {/* Tools Section */}
                     <div className="grid gap-4 lg:grid-cols-2">
-                        {/* Report Generator */}
-                        <ReportGenerator />
+                        {/* Report Generators */}
+                        <div className="space-y-4">
+                            <MonthlyReportGenerator data={pressData} type="press-releases" />
+                            <MonthlyReportGenerator data={commandoData} type="commando" />
+                        </div>
 
                         {/* Backup Manager */}
-                        <BackupManager />
+                        <div className="space-y-4">
+                            <BackupManager />
+                        </div>
                     </div>
                 </>
             )}

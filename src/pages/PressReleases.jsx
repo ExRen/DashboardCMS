@@ -17,6 +17,11 @@ import { AssignmentDropdown } from "@/components/ui/AssignmentDropdown"
 import { ContentTemplates } from "@/components/ui/ContentTemplates"
 import { logActivity } from "@/components/ui/ActivityLog"
 import { CommentsPanel, getCommentCount } from "@/components/ui/CommentsPanel"
+import { ContentPreview } from "@/components/ui/ContentPreview"
+import { ContentScheduler } from "@/components/ui/ContentScheduler"
+import { TagsInput } from "@/components/ui/TagsManager"
+import { DuplicateDetection } from "@/components/ui/DuplicateDetection"
+import { BulkImportCSV } from "@/components/ui/BulkImportCSV"
 import { ExternalLink, Filter, Search, Plus, X, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Upload, CheckSquare, Square, Calendar, Keyboard, MessageSquare, Download, Copy, Printer } from "lucide-react"
 
 const PAGE_SIZE = 50
@@ -25,8 +30,20 @@ const INITIAL_FORM = {
     "JENIS RILIS": "", "KETEGORI": "", "MEDIA PLAN": "", "LINGKUP": "",
     "LINK WEBSITE": "", "FOLDER SIARAN PERS": "", "WRITER CORCOMM": "",
     "REVIEW": "", "PROCESS": "", "KETERANGAN": "", year: 2025,
-    "ASSIGNED_TO": "", "NOTES": ""
+    "ASSIGNED_TO": "", "NOTES": "", tags: [], scheduled_at: null
 }
+
+const IMPORT_COLUMNS = [
+    { csvName: "NO", dbName: "NO" },
+    { csvName: "TANGGAL TERBIT", dbName: "TANGGAL TERBIT" },
+    { csvName: "NOMOR SIARAN PERS", dbName: "NOMOR SIARAN PERS" },
+    { csvName: "JUDUL SIARAN PERS", dbName: "JUDUL SIARAN PERS" },
+    { csvName: "JENIS RILIS", dbName: "JENIS RILIS" },
+    { csvName: "KETEGORI", dbName: "KETEGORI" },
+    { csvName: "LINGKUP", dbName: "LINGKUP" },
+    { csvName: "WRITER CORCOMM", dbName: "WRITER CORCOMM" },
+    { csvName: "LINK WEBSITE", dbName: "LINK WEBSITE" }
+]
 
 export function PressReleases() {
     const toast = useToast()
@@ -346,17 +363,19 @@ export function PressReleases() {
             {/* Import Modal */}
             {showImport && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto">
-                        <CardHeader className="flex flex-row items-center justify-between"><CardTitle>Import CSV</CardTitle><button onClick={() => { setShowImport(false); setImportData([]); }}><X className="h-5 w-5" /></button></CardHeader>
-                        <CardContent className="space-y-4">
-                            <div><label className="text-sm font-medium">Pilih File CSV</label><input type="file" accept=".csv" onChange={handleFileUpload} className="w-full mt-1 p-2 rounded-lg bg-muted border border-border text-sm" /></div>
-                            {importData.length > 0 && (<>
-                                <div className="text-sm text-muted-foreground">{importData.length} baris data siap diimport</div>
-                                <div className="max-h-48 overflow-auto border rounded-lg"><table className="w-full text-xs"><thead className="bg-muted"><tr>{Object.keys(importData[0]).slice(0, 4).map(key => <th key={key} className="p-2 text-left">{key}</th>)}</tr></thead><tbody>{importData.slice(0, 5).map((row, idx) => (<tr key={idx} className="border-t">{Object.values(row).slice(0, 4).map((val, i) => <td key={i} className="p-2 truncate max-w-[150px]">{val}</td>)}</tr>))}</tbody></table></div>
-                                <div className="flex gap-3"><Button variant="outline" onClick={() => { setShowImport(false); setImportData([]); }} className="flex-1">Batal</Button><Button onClick={handleImport} disabled={importing} className="flex-1">{importing ? "Mengimport..." : `Import ${importData.length} Data`}</Button></div>
-                            </>)}
-                        </CardContent>
-                    </Card>
+                    <div className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto">
+                        <div className="flex justify-end mb-2">
+                            <button onClick={() => setShowImport(false)} className="p-2 bg-white rounded-full hover:bg-gray-100"><X className="h-5 w-5" /></button>
+                        </div>
+                        <BulkImportCSV
+                            table="press_releases"
+                            columns={IMPORT_COLUMNS}
+                            onComplete={async () => {
+                                setShowImport(false)
+                                await fetchAllData()
+                            }}
+                        />
+                    </div>
                 </div>
             )}
 
@@ -377,10 +396,29 @@ export function PressReleases() {
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                <div><label className="text-sm font-medium">Judul Siaran Pers *</label><textarea required value={formData["JUDUL SIARAN PERS"]} onChange={(e) => setFormData({ ...formData, "JUDUL SIARAN PERS": e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg bg-muted border border-border text-sm" rows={2} /></div>
+                                <div>
+                                    <label className="text-sm font-medium">Judul Siaran Pers *</label>
+                                    <textarea required value={formData["JUDUL SIARAN PERS"]} onChange={(e) => setFormData({ ...formData, "JUDUL SIARAN PERS": e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg bg-muted border border-border text-sm" rows={2} />
+                                    <div className="mt-2">
+                                        <DuplicateDetection
+                                            title={formData["JUDUL SIARAN PERS"]}
+                                            table="press_releases"
+                                            titleField="JUDUL SIARAN PERS"
+                                        />
+                                    </div>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div><label className="text-sm font-medium">Nomor Siaran Pers</label><input type="text" value={formData["NOMOR SIARAN PERS"]} onChange={(e) => setFormData({ ...formData, "NOMOR SIARAN PERS": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm" /></div>
-                                    <div><label className="text-sm font-medium">Tanggal Terbit</label><div className="mt-1"><DatePicker value={formData["TANGGAL TERBIT"]} onChange={(val) => setFormData({ ...formData, "TANGGAL TERBIT": val })} placeholder="Pilih atau ketik tanggal..." /></div></div>
+                                    <div>
+                                        <label className="text-sm font-medium">Tanggal Terbit</label>
+                                        <div className="mt-1 space-y-3">
+                                            <DatePicker value={formData["TANGGAL TERBIT"]} onChange={(val) => setFormData({ ...formData, "TANGGAL TERBIT": val })} placeholder="Pilih atau ketik tanggal..." />
+                                            <ContentScheduler
+                                                value={{ datetime: formData.scheduled_at }}
+                                                onChange={(val) => setFormData({ ...formData, scheduled_at: val?.datetime || null })}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
@@ -391,11 +429,16 @@ export function PressReleases() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="text-sm font-medium">Kategori</label>
-                                        <select value={formData["KETEGORI"]} onChange={(e) => setFormData({ ...formData, "KETEGORI": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm">
+                                        <label className="text-sm font-medium">Kategori & Tags</label>
+                                        <select value={formData["KETEGORI"]} onChange={(e) => setFormData({ ...formData, "KETEGORI": e.target.value })} className="w-full mt-1 h-10 px-3 rounded-lg bg-muted border border-border text-sm mb-2">
                                             <option value="">Pilih Kategori</option>
                                             {kategoriOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                         </select>
+                                        <TagsInput
+                                            value={formData.tags || []}
+                                            onChange={(tags) => setFormData({ ...formData, tags })}
+                                            placeholder="Tambah tags..."
+                                        />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
@@ -427,6 +470,17 @@ export function PressReleases() {
                                         />
                                     </div>
                                 </div>
+
+                                {/* Content Preview */}
+                                {formData["JUDUL SIARAN PERS"] && (
+                                    <div className="pt-4 border-t border-border mt-4 mb-4">
+                                        <ContentPreview
+                                            title={formData["JUDUL SIARAN PERS"]}
+                                            content={formData["NOTES"] || formData["KETERANGAN"] || formData["JUDUL SIARAN PERS"]}
+                                            date={formData["TANGGAL TERBIT"]}
+                                        />
+                                    </div>
+                                )}
 
                                 {/* Comments Button - only for editing */}
                                 {editingId && (

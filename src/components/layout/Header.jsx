@@ -3,7 +3,8 @@ import { Bell, Search, Moon, Sun, LogOut, User, History, Keyboard } from "lucide
 import { useTheme } from "@/context/ThemeContext"
 import { useAuth } from "@/context/AuthContext"
 import { ActivityLog, ActivityLogButton, getActivities } from "@/components/ui/ActivityLog"
-import { NotificationBell } from "@/components/ui/NotificationBell"
+
+import { NotificationsDropdown } from "@/components/ui/NotificationsDropdown"
 import { KeyboardShortcutsModal, useKeyboardShortcuts } from "@/components/ui/KeyboardShortcutsModal"
 
 export function Header({ title, onNavigate }) {
@@ -44,7 +45,7 @@ export function Header({ title, onNavigate }) {
                     </button>
 
                     {/* Notification Bell */}
-                    <NotificationBell onNavigate={onNavigate} />
+                    <NotificationsDropdown />
 
                     {/* Activity Log */}
                     <ActivityLogButton
