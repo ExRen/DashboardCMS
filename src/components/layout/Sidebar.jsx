@@ -11,7 +11,8 @@ import {
     Database,
     Users,
     Settings,
-    Image
+    Image,
+    ClipboardList
 } from "lucide-react"
 import { useState } from "react"
 
@@ -21,6 +22,7 @@ const menuItems = [
     { icon: Megaphone, label: "COMMANDO", id: "commando" },
     { icon: Kanban, label: "Pipeline", id: "pipeline" },
     { icon: Calendar, label: "Kalender", id: "calendar" },
+    { icon: ClipboardList, label: "Media Plan", id: "media-plan" },
     { icon: BarChart3, label: "Analytics", id: "analytics" },
     { icon: Image, label: "Media Library", id: "media" },
     { icon: Database, label: "Master Data", id: "master-data" },
@@ -60,7 +62,7 @@ export function Sidebar({ currentPage, onNavigate }) {
                         key={item.id}
                         onClick={() => onNavigate(item.id)}
                         className={cn(
-                            "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-colors",
+                            "flex items-center justify-start gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-colors",
                             currentPage === item.id
                                 ? "bg-primary text-primary-foreground"
                                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"

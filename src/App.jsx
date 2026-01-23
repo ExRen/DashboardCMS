@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { ThemeProvider } from "@/context/ThemeContext"
 import { AuthProvider, useAuth } from "@/context/AuthContext"
 import { DataProvider } from "@/context/DataContext"
@@ -19,6 +19,7 @@ const Settings = lazy(() => import("@/pages/Settings").then(m => ({ default: m.S
 const MasterData = lazy(() => import("@/pages/MasterData").then(m => ({ default: m.MasterData })))
 const UserManagement = lazy(() => import("@/pages/UserManagement").then(m => ({ default: m.UserManagement })))
 const MediaLibrary = lazy(() => import("@/pages/MediaLibrary").then(m => ({ default: m.MediaLibrary })))
+const MediaPlan = lazy(() => import("@/pages/MediaPlan").then(m => ({ default: m.MediaPlan })))
 
 const pageTitles = {
   "dashboard": "Dashboard Overview",
@@ -26,6 +27,7 @@ const pageTitles = {
   "commando": "COMMANDO - Social Media Content",
   "pipeline": "Content Pipeline",
   "calendar": "Kalender Publikasi",
+  "media-plan": "Media Plan",
   "analytics": "Analytics & Reports",
   "media": "Media Library",
   "master-data": "Master Data",
@@ -47,7 +49,29 @@ function PageLoader() {
 
 function AppContent() {
   const { user, loading } = useAuth()
-  const [currentPage, setCurrentPage] = useState("dashboard")
+
+  // Use URL hash for navigation persistence
+  const getPageFromHash = () => {
+    const hash = window.location.hash.replace('#', '')
+    return hash || 'dashboard'
+  }
+
+  const [currentPage, setCurrentPage] = useState(getPageFromHash)
+
+  // Sync with browser back/forward buttons
+  useEffect(() => {
+    const handleHashChange = () => {
+      setCurrentPage(getPageFromHash())
+    }
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  // Update URL hash when page changes
+  const handleNavigate = (page) => {
+    window.location.hash = page
+    setCurrentPage(page)
+  }
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -75,6 +99,8 @@ function AppContent() {
         return <Pipeline />
       case "calendar":
         return <CalendarPage />
+      case "media-plan":
+        return <MediaPlan />
       case "analytics":
         return <Analytics />
       case "media":
@@ -92,10 +118,10 @@ function AppContent() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+      <Sidebar currentPage={currentPage} onNavigate={handleNavigate} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title={pageTitles[currentPage]} onNavigate={setCurrentPage} />
+        <Header title={pageTitles[currentPage]} onNavigate={handleNavigate} />
 
         <main className="flex-1 overflow-auto p-6">
           <Suspense fallback={<PageLoader />}>

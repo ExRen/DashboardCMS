@@ -142,3 +142,86 @@ export async function getMediaPlatforms() {
   
   return { data, error }
 }
+
+// ==========================================
+// MEDIA PLANS
+// ==========================================
+export async function getMediaPlans(options = {}) {
+  const { limit = 100, offset = 0, bulan, year, kategori, pic, status } = options
+  
+  let query = supabase
+    .from('media_plans')
+    .select('*')
+    .order('scheduled_date', { ascending: true })
+    .range(offset, offset + limit - 1)
+  
+  if (bulan) {
+    query = query.eq('bulan', bulan)
+  }
+  
+  if (year) {
+    query = query.eq('year', year)
+  }
+  
+  if (kategori) {
+    query = query.eq('kategori', kategori)
+  }
+  
+  if (pic) {
+    query = query.eq('pic', pic)
+  }
+  
+  if (status) {
+    query = query.eq('status', status)
+  }
+  
+  const { data, error } = await query
+  return { data, error }
+}
+
+export async function createMediaPlan(mediaPlan) {
+  const { data, error } = await supabase
+    .from('media_plans')
+    .insert([mediaPlan])
+    .select()
+  
+  return { data: data?.[0], error }
+}
+
+export async function updateMediaPlan(id, updates) {
+  const { data, error } = await supabase
+    .from('media_plans')
+    .update(updates)
+    .eq('id', id)
+    .select()
+  
+  return { data: data?.[0], error }
+}
+
+export async function deleteMediaPlan(id) {
+  const { error } = await supabase
+    .from('media_plans')
+    .delete()
+    .eq('id', id)
+  
+  return { error }
+}
+
+export async function bulkCreateMediaPlans(mediaPlans) {
+  const { data, error } = await supabase
+    .from('media_plans')
+    .insert(mediaPlans)
+    .select()
+  
+  return { data, error }
+}
+
+export async function bulkUpdateMediaPlans(ids, updates) {
+  const { data, error } = await supabase
+    .from('media_plans')
+    .update(updates)
+    .in('id', ids)
+    .select()
+  
+  return { data, error }
+}

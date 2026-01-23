@@ -102,4 +102,3 @@ export function Header({ title, onNavigate }) {
         </>
     )
 }
-
