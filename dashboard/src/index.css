@@ -1,0 +1,408 @@
+@import "tailwindcss";
+
+/* Linear / Enterprise Theme (High Density & Technical) */
+@theme {
+  /* LIGHT MODE (Clean, Technical, Precise) */
+  --color-background: #ffffff;
+  --color-foreground: #09090b;
+  /* Almost Black */
+
+  --color-card: #ffffff;
+  --color-card-foreground: #09090b;
+
+  --color-popover: #ffffff;
+  --color-popover-foreground: #09090b;
+
+  --color-primary: #5e6ad2;
+  /* Linear Blurple */
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #f4f4f5;
+  /* Zinc 100 */
+  --color-secondary-foreground: #18181b;
+
+  --color-muted: #f4f4f5;
+  --color-muted-foreground: #52525b;
+  /* Zinc 600 - Readable gray */
+
+  --color-accent: #f4f4f5;
+  --color-accent-foreground: #18181b;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+
+  --color-border: #e4e4e7;
+  /* Zinc 200 */
+  --color-input: #ffffff;
+  --color-ring: #5e6ad2;
+
+  --radius: 0.375rem;
+  /* 6px */
+}
+
+/* Base styles refinement */
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  /* High density */
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 
+   LINEAR STYLE UTILITIES
+   Focus on:
+   1. 1px Borders with low opacity
+   2. Subtle localized glows
+   3. High density spacing (smaller padding)
+*/
+
+/* CARDS & SURFACES (Shared structure, colors variable) */
+.bg-card,
+.bg-white,
+[role="dialog"],
+.popover {
+  background-color: var(--color-card) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  /* Subtle shadow light mode */
+}
+
+/* INPUTS */
+input,
+select,
+textarea,
+.bg-muted {
+  background-color: var(--color-background) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 4px !important;
+  height: 32px !important;
+  font-size: 13px !important;
+  color: var(--color-foreground) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 1px var(--color-primary) !important;
+}
+
+/* BUTTONS */
+button:not(.ghost),
+[role="button"],
+.btn-primary {
+  height: 48px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  border: 1px solid var(--color-border) !important;
+  background: white;
+  color: #09090b !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+button:hover:not(.ghost) {
+  background: #f4f4f5 !important;
+  border-color: #d4d4d8 !important;
+}
+
+/* Primary Action overrides */
+.bg-primary,
+.btn-primary {
+  background: #5e6ad2 !important;
+  border: 1px solid transparent !important;
+  color: white !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.bg-primary:hover,
+.btn-primary:hover {
+  background: #4f5bbf !important;
+  opacity: 1 !important;
+}
+
+
+/* SIDEBAR & HEADER (Light Mode) */
+aside {
+  background-color: #fbfbfb !important;
+  /* Very subtle off-white */
+  border-right: 1px solid var(--color-border) !important;
+}
+
+aside nav button {
+  justify-content: flex-start !important;
+  text-align: center !important;
+  padding-left: 1 rem !important;
+  height: 48px !important;
+  /* Larger hit area */
+  margin-top: 12px !important;
+  /* Increased spacing between buttons */
+  width: 100% !important;
+  /* display: flex !important; */
+}
+
+header {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+
+/* =======================================
+   DARK MODE OVERRIDES (The "Linear" Look) 
+   ======================================= */
+.dark {
+  /* High Contrast Dark Palette */
+  --color-background: #0e1117;
+  /* Deep Void */
+  --color-foreground: #ffffff;
+  /* Pure White Text for Contrast */
+
+  --color-card: #12141c;
+  --color-card-foreground: #ffffff;
+
+  --color-popover: #161920;
+  --color-popover-foreground: #ffffff;
+
+  --color-primary: #5e6ad2;
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #1c1f26;
+  --color-secondary-foreground: #ffffff;
+
+  --color-muted: #1c1f26;
+  --color-muted-foreground: #a1a1aa;
+  /* Zinc 400 - Clearer gray */
+
+  --color-accent: #262932;
+  --color-accent-foreground: #ffffff;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+
+  --color-border: rgba(255, 255, 255, 0.12);
+  /* Slightly stronger border */
+  --color-input: #0e1117;
+  --color-ring: #5e6ad2;
+}
+
+.dark body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  color-scheme: dark;
+}
+
+.dark .bg-card,
+.dark .bg-white,
+.dark [role="dialog"],
+.dark .popover {
+  background-color: #12141c !important;
+  border-color: var(--color-border) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark input,
+.dark select,
+.dark textarea,
+.dark .bg-muted {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  border-color: var(--color-border) !important;
+  color: #ffffff !important;
+}
+
+/* Fix dropdown options in dark mode */
+.dark select option {
+  background-color: #1c1f26 !important;
+  color: #ffffff !important;
+}
+
+.dark select option:hover,
+.dark select option:checked {
+  background-color: #5e6ad2 !important;
+  color: #ffffff !important;
+}
+
+.dark input:focus,
+.dark select:focus {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark button:not(.ghost) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.0) 100%);
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.dark button:hover:not(.ghost) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  /* Brighter border on hover */
+}
+
+.dark aside {
+  background-color: #0e1117 !important;
+}
+
+.dark header {
+  background-color: rgba(14, 17, 23, 0.8) !important;
+}
+
+/* Monospace for numbers (optional, can target specific classes if known) */
+td,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Custom scrollbar - Ultra thin */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262932;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #363a45;
+}
+
+/* =============================================
+   PRINT STYLES
+   ============================================= */
+@media print {
+
+  /* Hide non-essential elements */
+  aside,
+  nav,
+  .no-print,
+  button:not(.print-show),
+  [role="dialog"],
+  .fixed,
+  .sticky {
+    display: none !important;
+  }
+
+  /* Reset background and colors */
+  body,
+  .dark body,
+  .dark {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+  }
+
+  /* Main content takes full width */
+  main,
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Card styling for print */
+  .bg-card,
+  [class*="Card"] {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  /* Table optimizations */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 10pt !important;
+  }
+
+  th,
+  td {
+    border: 1px solid #ccc !important;
+    padding: 6px 8px !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  th {
+    background: #f5f5f5 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4 landscape;
+    margin: 1.5cm;
+  }
+
+  /* Headers */
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: black !important;
+    page-break-after: avoid;
+  }
+
+  /* Links */
+  a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666;
+  }
+
+  /* Badges and tags */
+  .rounded-full,
+  [class*="badge"],
+  [class*="tag"] {
+    border: 1px solid #999 !important;
+    background: transparent !important;
+    color: black !important;
+    padding: 2px 6px !important;
+  }
+
+  /* Print header - Add via JS */
+  .print-header {
+    display: block !important;
+    text-align: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid black;
+  }
+
+  .print-header h1 {
+    font-size: 16pt !important;
+    margin: 0 !important;
+  }
+
+  .print-header .print-date {
+    font-size: 10pt;
+    color: #666;
+  }
+}
